@@ -76,7 +76,7 @@ class AdminSupportController extends Controller
     public function show($id)
     {
         $ticket = SupportTicket::with([
-            'user:id,name,email,avatar,phone',
+            'user:id,name,email,avatar',
             'admin:id,name,email,avatar',
             'messages.sender:id,name,email,avatar'
         ])->findOrFail($id);

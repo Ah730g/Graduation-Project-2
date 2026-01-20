@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Post;
+use App\Models\PostImage;
+use App\Models\PostDurationPrice;
 use App\Models\RentalRequest;
 use App\Models\Contract;
 use App\Models\Review;
@@ -245,6 +247,14 @@ class AdminController extends Controller
     public function deletePost($id)
     {
         $post = Post::findOrFail($id);
+        
+        // Delete associated images first
+        PostImage::where('post_id', $post->id)->delete();
+        
+        // Delete associated duration prices
+        PostDurationPrice::where('post_id', $post->id)->delete();
+        
+        // Delete the post
         $post->delete();
 
         return response()->json(['message' => 'Post deleted successfully']);
