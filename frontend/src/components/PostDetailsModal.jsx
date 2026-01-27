@@ -93,19 +93,24 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-md p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-md max-w-4xl w-full max-h-[95vh] flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Sticky Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white z-10 rounded-t-md">
           <h2 className="text-2xl font-bold text-[#444]">
             {isEditMode ? t('admin.edit') + ' ' + t('admin.post') : t('admin.postDetails')}
           </h2>
           <button
             onClick={onClose}
-            className="text-2xl text-[#888] hover:text-[#444] transition duration-300 ease"
+            className="text-3xl text-[#888] hover:text-[#444] transition duration-300 ease leading-none w-8 h-8 flex items-center justify-center"
+            aria-label="Close"
           >
             ×
           </button>
         </div>
+        
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 p-6 min-h-0">
 
         {loading && !post ? (
           <div className="text-center py-8">
@@ -127,7 +132,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-[#444] mb-2">
                   {t('admin.price')}
@@ -185,7 +190,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-[#444] mb-2">
                   {t('admin.city')}
@@ -230,7 +235,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
             <div className="border-t pt-4 mt-4">
               <h3 className="text-lg font-bold text-[#444] mb-4">{t('apartments.apartmentDetails') || 'Apartment Details'}</h3>
               
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#444] mb-2">
                     {t('apartments.floorNumber') || 'Floor Number'}
@@ -336,7 +341,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end mt-4">
+            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
@@ -360,14 +365,14 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               <p className="text-[#888]">{post?.Address}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <span className="text-sm font-semibold text-[#444]">{t('admin.price')}: </span>
                 <span className="text-[#888]">{post?.Price}</span>
               </div>
               <div>
                 <span className="text-sm font-semibold text-[#444]">{t('admin.status')}: </span>
-                <span className={`px-2 py-1 rounded-md text-sm ${
+                <span className={`px-2 py-1 rounded-md text-sm inline-block ${
                   post?.status === 'active' ? 'bg-green-200' :
                   post?.status === 'pending' ? 'bg-yellow-200' :
                   post?.status === 'rented' ? 'bg-blue-200' : 'bg-red-200'
@@ -405,7 +410,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               post?.building_condition) && (
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-lg font-bold text-[#444] mb-3">{t('apartments.apartmentDetails') || 'Apartment Details'}</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {post?.floor_number && (
                     <div>
                       <span className="text-sm font-semibold text-[#444]">{t('apartments.floorNumber') || 'Floor Number'}: </span>
@@ -459,16 +464,16 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
             )}
 
             {post?.Description && (
-              <div>
-                <span className="text-sm font-semibold text-[#444]">{t('admin.description')}: </span>
-                <p className="text-[#888] mt-1">{post.Description}</p>
+              <div className="mt-4">
+                <span className="text-sm font-semibold text-[#444] block mb-2">{t('admin.description')}: </span>
+                <p className="text-[#888] mt-1 whitespace-pre-wrap break-words">{post.Description}</p>
               </div>
             )}
 
             {post?.postimage && post.postimage.length > 0 && (
-              <div>
-                <span className="text-sm font-semibold text-[#444]">{t('admin.images')}: </span>
-                <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="mt-4">
+                <span className="text-sm font-semibold text-[#444] block mb-2">{t('admin.images')}: </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                   {post.postimage.map((img, idx) => (
                     <img key={idx} src={img.Image_URL} alt={`${post.Title} ${idx + 1}`} className="w-full h-24 object-cover rounded-md" />
                   ))}
@@ -487,7 +492,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               </div>
             )}
 
-            <div className="flex gap-3 justify-end mt-4">
+            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={onClose}
                 className="bg-gray-200 px-6 py-3 rounded-md font-bold hover:scale-105 transition duration-300 ease"
@@ -497,6 +502,7 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

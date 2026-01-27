@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import FloorPlanSVG from '../pages/FloorPlanSVG';
 import FloorPlan3D from './floorplan/FloorPlan3D';
 import { useLanguage } from '../contexts/LanguageContext';
+import { convert2DTo3D } from '../lib/floorplan3d/converter';
 
 function FloorPlanDisplay({ 
   floorPlanData, 
@@ -40,6 +41,30 @@ function FloorPlanDisplay({
   }
 
   const floorPlanTitle = title || layout.title || (t('apartments.floorPlan') || 'Floor Plan');
+
+  // Check if layout is already in 3D format (has geometry on rooms)
+  const is3DLayout = layout.rooms && layout.rooms.length > 0 && layout.rooms[0]?.geometry;
+
+  // Convert to 3D only when needed and if not already 3D
+  const layout3D = useMemo(() => {
+    if (is3DLayout) {
+      return layout; // Already in 3D format
+    }
+    // Check if rooms have required 2D properties
+    if (layout.rooms && layout.rooms.length > 0) {
+      const firstRoom = layout.rooms[0];
+      if (firstRoom.x_m !== undefined && firstRoom.y_m !== undefined && 
+          firstRoom.width_m !== undefined && firstRoom.height_m !== undefined) {
+        try {
+          return convert2DTo3D(layout);
+        } catch (error) {
+          console.error('Error converting layout to 3D:', error);
+          return layout; // Return original layout on error
+        }
+      }
+    }
+    return layout;
+  }, [layout, is3DLayout]);
 
   if (compact) {
     // Compact view for cards
@@ -105,7 +130,7 @@ function FloorPlanDisplay({
                     interactive={false}
                   />
                 ) : (
-                  <FloorPlan3D layout={layout} />
+                  <FloorPlan3D layout={layout3D} />
                 )}
               </div>
             </div>
@@ -148,7 +173,7 @@ function FloorPlanDisplay({
             interactive={false}
           />
         ) : (
-          <FloorPlan3D layout={layout} />
+          <FloorPlan3D layout={layout3D} />
         )}
       </div>
     </div>

@@ -141,8 +141,8 @@ function EstateInfo() {
   };
   return (
     <div
-      className="relative px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px] overflow-hidden
-     lg:flex lg:justify-between h-[calc(100vh-100px)] max-lg:overflow-y-scroll"
+      className="relative px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
+     lg:flex lg:justify-between min-h-[calc(100vh-100px)] py-5"
     >
       {loading ? (
         <div className={`text-3xl text-green-600 font-bold absolute top-1/2 ${
@@ -154,10 +154,15 @@ function EstateInfo() {
         </div>
       ) : (
         <>
-          <div className={`lg:w-3/5 max-lg:mb-5 ${
+          <div className={`lg:w-3/5 max-lg:mb-5 overflow-y-auto max-h-[calc(100vh-120px)] ${
             language === 'ar' ? 'lg:pl-14' : 'lg:pr-14'
           }`}>
-            <Slider images={postDetails.post.images} />
+            {/* Images Slider at the top */}
+            {postDetails.post.images && postDetails.post.images.length > 0 && (
+              <div className="mb-6">
+                <Slider images={postDetails.post.images} />
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <div className="flex flex-col gap-4">
                 <h2 className="font-bold text-3xl">{postDetails.post.Title}</h2>
@@ -197,8 +202,26 @@ function EstateInfo() {
             <p className="mt-5 leading-5 text-sm">
               {postDetails.post.Description}
             </p>
+
+            {/* Floor Plan Section - Under Images */}
+            {postDetails.post?.floor_plan_data && (
+              <div className="mt-6 border-t pt-6">
+                <h2 className="font-bold text-2xl mb-4">{t('apartments.floorPlan') || 'Floor Plan'}</h2>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <FloorPlanDisplay 
+                    floorPlanData={postDetails.post.floor_plan_data}
+                    show3D={true}
+                    compact={false}
+                    showEditButton={user && user.id === postDetails.post.user_id}
+                    onEdit={() => {
+                      navigate(`/post/add?edit=${postDetails.post.id}`);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex-1 bg-[#fcf5f3] px-5 max-md:mb-5 max-md:py-5">
+          <div className="flex-1 bg-[#fcf5f3] px-5 max-md:mb-5 max-md:py-5 overflow-y-auto max-h-[calc(100vh-120px)]">
             <div className="flex flex-col gap-4">
               <h2 className="font-bold">General</h2>
               <div className="bg-white rounded-md px-3 py-2 flex flex-col gap-3">
@@ -389,21 +412,6 @@ function EstateInfo() {
                       );
                     })}
                   </div>
-                </div>
-              )}
-
-              {/* Floor Plan Section */}
-              {postDetails.post?.floor_plan_data && (
-                <div className="border-t pt-4 mt-4">
-                  <FloorPlanDisplay 
-                    floorPlanData={postDetails.post.floor_plan_data}
-                    show3D={true}
-                    compact={false}
-                    showEditButton={user && user.id === postDetails.post.user_id}
-                    onEdit={() => {
-                      navigate(`/post/add?edit=${postDetails.post.id}`);
-                    }}
-                  />
                 </div>
               )}
 
