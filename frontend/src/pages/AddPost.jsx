@@ -5,6 +5,10 @@ import UploadWidget from "../components/UploadWidget";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { usePopup } from "../contexts/PopupContext";
+import FloorPlanGenerator from "./FloorPlanGenerator";
+import FloorPlanManualBuilder from "./FloorPlanManualBuilder";
+import FloorPlanEditor from "./FloorPlanEditor";
+import FloorPlanSVG from "./FloorPlanSVG";
 
 function AddPost() {
   const [properties, setProperties] = useState(null);
@@ -22,8 +26,27 @@ function AddPost() {
   const { t, language } = useLanguage();
   const { showToast } = usePopup();
   const [durationPrices, setDurationPrices] = useState([]);
+  const [floorPlanData, setFloorPlanData] = useState(null);
+  const [showFloorPlanModal, setShowFloorPlanModal] = useState(false);
+  const [floorPlanMode, setFloorPlanMode] = useState(null); // 'generate', 'manual', 'editor'
+  const [floorPlanTitle, setFloorPlanTitle] = useState("");
 
   useEffect(() => {
+    // التحقق من وجود بيانات مخطط عند العودة من صفحة المخططات
+    const savedFloorPlan = localStorage.getItem('savedFloorPlanForAddPost');
+    if (savedFloorPlan) {
+      try {
+        const floorPlan = JSON.parse(savedFloorPlan);
+        setFloorPlanData(floorPlan);
+        setFloorPlanTitle(floorPlan.title || "");
+        showToast(t("addPost.floorPlanCreated") || "Floor plan created successfully", "success");
+        localStorage.removeItem('savedFloorPlanForAddPost');
+      } catch (e) {
+        console.error("Error parsing saved floor plan:", e);
+        localStorage.removeItem('savedFloorPlanForAddPost');
+      }
+    }
+
     // Check if editing
     const editId = searchParams.get('edit');
     if (editId) {
@@ -48,6 +71,19 @@ function AddPost() {
               price: dp.price,
             })));
           }
+          // Load floor plan data if it exists
+          if (post.floor_plan_data) {
+            try {
+              const floorPlan = typeof post.floor_plan_data === 'string' 
+                ? JSON.parse(post.floor_plan_data) 
+                : post.floor_plan_data;
+              setFloorPlanData(floorPlan);
+              setFloorPlanTitle(floorPlan.title || "");
+            } catch (e) {
+              console.error("Error parsing floor plan data:", e);
+            }
+          }
+          // Note: New apartment detail fields will be loaded via defaultValue in form inputs
           setLoading(false);
         })
         .catch((error) => {
@@ -108,6 +144,14 @@ function AddPost() {
       school: inputs["school"] ? parseInt(inputs["school"]) : null,
       images: avatarURL || [],
       duration_prices: durationPrices.filter(dp => dp.duration_type && dp.price > 0),
+      floor_plan_data: floorPlanData ? (typeof floorPlanData === 'string' ? floorPlanData : JSON.stringify(floorPlanData)) : null,
+      floor_number: inputs["floor-number"] ? parseInt(inputs["floor-number"]) : null,
+      has_elevator: inputs["has-elevator"] === "on" || inputs["has-elevator"] === true,
+      floor_condition: inputs["floor-condition"] || null,
+      has_internet: inputs["has-internet"] === "on" || inputs["has-internet"] === true,
+      has_electricity: inputs["has-electricity"] === "on" || inputs["has-electricity"] === true,
+      has_air_conditioning: inputs["has-air-conditioning"] === "on" || inputs["has-air-conditioning"] === true,
+      building_condition: inputs["building-condition"] || null,
     };
   };
 
@@ -128,6 +172,11 @@ function AddPost() {
     
     // Check images array
     if (payload.images && Array.isArray(payload.images) && payload.images.length > 0) {
+      count++;
+    }
+    
+    // Check floor plan
+    if (payload.floor_plan_data) {
       count++;
     }
     
@@ -223,9 +272,9 @@ function AddPost() {
   return (
     <div
       className="px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
-     lg:flex lg:justify-between h-[calc(100vh-100px)] overflow-hidden"
+     flex flex-col h-[calc(100vh-100px)] overflow-hidden"
     >
-      <div className={`inputs lg:w-3/5 flex flex-col gap-12 mb-3 overflow-y-scroll relative ${
+      <div className={`inputs w-full flex flex-col gap-12 mb-3 overflow-y-scroll relative ${
         language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
       }`}>
         <h2 className="font-bold text-3xl">{t("addPost.title")}</h2>
@@ -489,6 +538,201 @@ function AddPost() {
               />
             </div>
             
+            {/* New Apartment Details Section */}
+            <div className="apartment-details-section w-full border-t pt-4 mt-4">
+              <h3 className="font-bold text-lg mb-4">{t("addPost.apartmentDetails") || "Apartment Details"}</h3>
+              
+              <div className="flex flex-wrap gap-y-5 gap-x-2 justify-between items-center">
+                <div className="floor-number-item flex flex-col">
+                  <label htmlFor="floor-number" className="font-semibold text-sm">
+                    {t("addPost.floorNumber") || "Floor Number"}
+                  </label>
+                  <input
+                    type="number"
+                    name="floor-number"
+                    id="floor-number"
+                    defaultValue={postData?.floor_number || postData?.Floor_Number || ""}
+                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                  />
+                </div>
+                
+                <div className="floor-condition-item flex flex-col">
+                  <label htmlFor="floor-condition" className="font-semibold text-sm">
+                    {t("addPost.floorCondition") || "Floor Condition"}
+                  </label>
+                  <select
+                    name="floor-condition"
+                    id="floor-condition"
+                    defaultValue={postData?.floor_condition || postData?.Floor_Condition || ""}
+                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                  >
+                    <option value="">{t("addPost.selectOption") || "Select..."}</option>
+                    <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
+                    <option value="good">{t("addPost.good") || "Good"}</option>
+                    <option value="fair">{t("addPost.fair") || "Fair"}</option>
+                    <option value="poor">{t("addPost.poor") || "Poor"}</option>
+                  </select>
+                </div>
+                
+                <div className="building-condition-item flex flex-col">
+                  <label htmlFor="building-condition" className="font-semibold text-sm">
+                    {t("addPost.buildingCondition") || "Building Condition"}
+                  </label>
+                  <select
+                    name="building-condition"
+                    id="building-condition"
+                    defaultValue={postData?.building_condition || postData?.Building_Condition || ""}
+                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                  >
+                    <option value="">{t("addPost.selectOption") || "Select..."}</option>
+                    <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
+                    <option value="good">{t("addPost.good") || "Good"}</option>
+                    <option value="fair">{t("addPost.fair") || "Fair"}</option>
+                    <option value="poor">{t("addPost.poor") || "Poor"}</option>
+                  </select>
+                </div>
+                
+                <div className="amenities-checkboxes w-full flex flex-wrap gap-4 mt-2">
+                  <label htmlFor="has-elevator" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="has-elevator"
+                      id="has-elevator"
+                      defaultChecked={postData?.has_elevator || postData?.Has_Elevator || false}
+                      className="w-5 h-5"
+                    />
+                    {t("addPost.hasElevator") || "Has Elevator"}
+                  </label>
+                  
+                  <label htmlFor="has-internet" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="has-internet"
+                      id="has-internet"
+                      defaultChecked={postData?.has_internet || postData?.Has_Internet || false}
+                      className="w-5 h-5"
+                    />
+                    {t("addPost.hasInternet") || "Has Internet"}
+                  </label>
+                  
+                  <label htmlFor="has-electricity" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="has-electricity"
+                      id="has-electricity"
+                      defaultChecked={postData?.has_electricity || postData?.Has_Electricity || false}
+                      className="w-5 h-5"
+                    />
+                    {t("addPost.hasElectricity") || "Has Electricity"}
+                  </label>
+                  
+                  <label htmlFor="has-air-conditioning" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="has-air-conditioning"
+                      id="has-air-conditioning"
+                      defaultChecked={postData?.has_air_conditioning || postData?.Has_Air_Conditioning || false}
+                      className="w-5 h-5"
+                    />
+                    {t("addPost.hasAirConditioning") || "Has Air Conditioning"}
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            {/* Floor Plan Section */}
+            <div className="floor-plan-section w-full border-t pt-4 mt-4">
+              <h3 className="font-bold text-lg mb-4">📐 {t("addPost.floorPlan") || "Floor Plan"}</h3>
+              <p className="text-sm text-gray-600 mb-4">{t("addPost.floorPlanDesc") || "Create a floor plan for your apartment to help renters visualize the space."}</p>
+              
+              {floorPlanData ? (
+                <div className="mb-4 p-4 bg-green-50 rounded-md border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-green-800">✅ {t("addPost.floorPlanCreated") || "Floor plan created"}</p>
+                      {floorPlanTitle && <p className="text-sm text-green-600">{floorPlanTitle}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // حفظ بيانات المخطط الحالي للعودة
+                        localStorage.setItem('floorPlanReturnUrl', '/post/add');
+                        localStorage.setItem('floorPlanReturnData', JSON.stringify({
+                          postId: postId,
+                          isEditing: isEditing,
+                          existingFloorPlan: floorPlanData
+                        }));
+                        // حفظ المخطط الحالي للتحرير
+                        localStorage.setItem('floorPlanToEdit', JSON.stringify({
+                          layout: floorPlanData.layout || floorPlanData,
+                          title: floorPlanTitle,
+                          originalResult: floorPlanData
+                        }));
+                        // الانتقال إلى صفحة التحرير
+                        navigate('/floor-plan?returnTo=addPost&mode=edit');
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+                    >
+                      {t("addPost.editFloorPlan") || "Edit"}
+                    </button>
+                  </div>
+                  <div className="mt-3 max-h-64 overflow-auto border border-green-300 rounded p-2 bg-white">
+                    <FloorPlanSVG 
+                      layout={floorPlanData.layout || floorPlanData} 
+                      title={floorPlanTitle}
+                      interactive={false}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFloorPlanData(null);
+                      setFloorPlanTitle("");
+                      showToast(t("addPost.floorPlanRemoved") || "Floor plan removed", "success");
+                    }}
+                    className="mt-2 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition text-sm"
+                  >
+                    {t("addPost.removeFloorPlan") || "Remove"}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // حفظ معلومات العودة في localStorage
+                      localStorage.setItem('floorPlanReturnUrl', '/post/add');
+                      localStorage.setItem('floorPlanReturnData', JSON.stringify({
+                        postId: postId,
+                        isEditing: isEditing
+                      }));
+                      // الانتقال إلى صفحة إنشاء المخطط
+                      navigate('/floor-plan?returnTo=addPost');
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition font-medium"
+                  >
+                    🤖 {t("addPost.generateFloorPlan") || "Generate with AI"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // حفظ معلومات العودة في localStorage
+                      localStorage.setItem('floorPlanReturnUrl', '/post/add');
+                      localStorage.setItem('floorPlanReturnData', JSON.stringify({
+                        postId: postId,
+                        isEditing: isEditing
+                      }));
+                      // الانتقال إلى صفحة إنشاء المخطط يدوياً
+                      navigate('/floor-plan/manual?returnTo=addPost');
+                    }}
+                    className="px-6 py-3 bg-yellow-300 text-[#444] rounded-md hover:bg-yellow-400 transition font-medium"
+                  >
+                    ✏️ {t("addPost.createManually") || "Create Manually"}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Duration Pricing Section */}
             <div className="duration-prices-section w-full border-t pt-4 mt-4">
               <h3 className="font-bold text-lg mb-4">{t("addPost.durationPricing") || "Rental Duration Pricing"}</h3>
@@ -564,12 +808,83 @@ function AddPost() {
             >
               {t("addPost.currentLocation")}
             </div>
+            
+            {/* Images Upload Section - Moved to bottom */}
+            <div className="images-upload-section w-full border-t pt-6 mt-6">
+              <h3 className="font-bold text-lg mb-4">📷 {t("addPost.images") || "Images"}</h3>
+              <p className="text-sm text-gray-600 mb-4">{t("addPost.imagesDesc") || "Upload images of your apartment to help renters see the property."}</p>
+              <div className="bg-[#fcf5f3] rounded-lg p-6 flex justify-center items-center min-h-[300px]">
+                <UploadWidget setAvatarURL={setAvatarURL} />
+              </div>
+            </div>
           </form>
         )}
       </div>
-      <div className="right flex-1 md:bg-[#fcf5f3] overflow-y-scroll h-auto px-2 flex justify-center items-center">
-        <UploadWidget setAvatarURL={setAvatarURL} />
-      </div>
+
+      {/* Floor Plan Modal */}
+      {showFloorPlanModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
+              <h2 className="text-2xl font-bold text-white">
+                {floorPlanMode === 'generate' && (t("addPost.generateFloorPlan") || "Generate Floor Plan with AI")}
+                {floorPlanMode === 'manual' && (t("addPost.createManually") || "Create Floor Plan Manually")}
+                {floorPlanMode === 'editor' && (t("addPost.editFloorPlan") || "Edit Floor Plan")}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowFloorPlanModal(false);
+                  setFloorPlanMode(null);
+                }}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {floorPlanMode === 'generate' && (
+                <FloorPlanGenerator 
+                  onFloorPlanCreated={(result) => {
+                    setFloorPlanData(result);
+                    setFloorPlanTitle(result.title || "");
+                    setShowFloorPlanModal(false);
+                    setFloorPlanMode(null);
+                    showToast(t("addPost.floorPlanCreated") || "Floor plan created successfully", "success");
+                  }}
+                />
+              )}
+              {floorPlanMode === 'manual' && (
+                <FloorPlanManualBuilder 
+                  onFloorPlanCreated={(result) => {
+                    setFloorPlanData(result);
+                    setFloorPlanTitle(result.title || "");
+                    setShowFloorPlanModal(false);
+                    setFloorPlanMode(null);
+                    showToast(t("addPost.floorPlanCreated") || "Floor plan created successfully", "success");
+                  }}
+                />
+              )}
+              {floorPlanMode === 'editor' && floorPlanData && (
+                <FloorPlanEditor
+                  initialLayout={floorPlanData.layout || floorPlanData}
+                  title={floorPlanTitle}
+                  originalResult={floorPlanData}
+                  onLayoutUpdate={(updatedLayout) => {
+                    setFloorPlanData({
+                      ...floorPlanData,
+                      layout: updatedLayout
+                    });
+                  }}
+                  onClose={() => {
+                    setShowFloorPlanModal(false);
+                    setFloorPlanMode(null);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,7 +46,14 @@ class UpdatepostRequest extends FormRequest
                 "resturant" => "nullable|integer",
                 "school" => "nullable|integer",
                 "images" => "nullable|array",
-                "images.*" => "nullable|string"
+                "images.*" => "nullable|string",
+                "floor_number" => "nullable|integer",
+                "has_elevator" => "nullable|boolean",
+                "floor_condition" => "nullable|string|in:excellent,good,fair,poor",
+                "has_internet" => "nullable|boolean",
+                "has_electricity" => "nullable|boolean",
+                "has_air_conditioning" => "nullable|boolean",
+                "building_condition" => "nullable|string|in:excellent,good,fair,poor"
             ];
         }
         
@@ -71,7 +78,14 @@ class UpdatepostRequest extends FormRequest
             "resturant" => "required|integer",
             "school" => "required|integer",
             "images" => "required|array",
-            "images.*" => "required|string"
+            "images.*" => "required|string",
+            "floor_number" => "nullable|integer",
+            "has_elevator" => "nullable|boolean",
+            "floor_condition" => "nullable|string|in:excellent,good,fair,poor",
+            "has_internet" => "nullable|boolean",
+            "has_electricity" => "nullable|boolean",
+            "has_air_conditioning" => "nullable|boolean",
+            "building_condition" => "nullable|string|in:excellent,good,fair,poor"
         ];
     }
 }

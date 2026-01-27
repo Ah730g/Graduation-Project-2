@@ -50,6 +50,14 @@ class FloorPlanController extends Controller
             ], 500);
         }
 
+        if (!$endpoint || !$model) {
+            Log::error('OpenRouter endpoint or model not configured');
+            return response()->json([
+                'error' => 'Endpoint or model not configured.',
+                'message' => 'يرجى التحقق من إعدادات OpenRouter في ملف .env'
+            ], 500);
+        }
+
         try {
             Log::info('Generating floor plan', [
                 'description_length' => strlen($description),

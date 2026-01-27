@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import Notification from '../components/Notification';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePopup } from '../contexts/PopupContext';
+import FloorPlanDisplay from '../components/FloorPlanDisplay';
 
 function EstateInfo() {
   const postDetails = useLoaderData();
@@ -246,6 +247,101 @@ function EstateInfo() {
                 </div>
               </div>
 
+              {/* Apartment Details Section */}
+              {(postDetails.post.floor_number || 
+                postDetails.post.has_elevator !== null && postDetails.post.has_elevator !== undefined || 
+                postDetails.post.floor_condition || 
+                postDetails.post.has_internet !== null && postDetails.post.has_internet !== undefined || 
+                postDetails.post.has_electricity !== null && postDetails.post.has_electricity !== undefined || 
+                postDetails.post.has_air_conditioning !== null && postDetails.post.has_air_conditioning !== undefined || 
+                postDetails.post.building_condition) && (
+                <>
+                  <h2 className="font-bold">{t('apartments.apartmentDetails') || 'Apartment Details'}</h2>
+                  <div className="bg-white rounded-md px-3 py-2 flex flex-col gap-3">
+                    {postDetails.post.floor_number && (
+                      <div className="flex gap-2 items-center">
+                        <img src="/public/size.png" alt="" className="w-6" />
+                        <div>
+                          <p className="font-bold -mb-1">{t('apartments.floorNumber') || 'Floor Number'}</p>
+                          <span className="text-sm">Floor {postDetails.post.floor_number}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {postDetails.post.has_elevator !== null && postDetails.post.has_elevator !== undefined && (
+                      <div className="flex gap-2 items-center">
+                        <img src="/public/utility.png" alt="" className="w-6" />
+                        <div>
+                          <p className="font-bold -mb-1">{t('apartments.elevator') || 'Elevator'}</p>
+                          <span className="text-sm">
+                            {postDetails.post.has_elevator ? (t('apartments.yes') || 'Yes') : (t('apartments.no') || 'No')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {postDetails.post.floor_condition && (
+                      <div className="flex gap-2 items-center">
+                        <img src="/public/fee.png" alt="" className="w-6" />
+                        <div>
+                          <p className="font-bold -mb-1">{t('apartments.floorCondition') || 'Floor Condition'}</p>
+                          <span className="text-sm capitalize">{postDetails.post.floor_condition}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {postDetails.post.building_condition && (
+                      <div className="flex gap-2 items-center">
+                        <img src="/public/fee.png" alt="" className="w-6" />
+                        <div>
+                          <p className="font-bold -mb-1">{t('apartments.buildingCondition') || 'Building Condition'}</p>
+                          <span className="text-sm capitalize">{postDetails.post.building_condition}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(postDetails.post.has_internet !== null && postDetails.post.has_internet !== undefined || 
+                      postDetails.post.has_electricity !== null && postDetails.post.has_electricity !== undefined || 
+                      postDetails.post.has_air_conditioning !== null && postDetails.post.has_air_conditioning !== undefined) && (
+                      <div className="flex gap-4 flex-wrap pt-2 border-t border-gray-200">
+                        {postDetails.post.has_internet !== null && postDetails.post.has_internet !== undefined && postDetails.post.has_internet && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-green-100">
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-semibold">{t('apartments.internet') || 'Internet'}</span>
+                          </div>
+                        )}
+                        
+                        {postDetails.post.has_electricity !== null && postDetails.post.has_electricity !== undefined && postDetails.post.has_electricity && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-yellow-100">
+                              <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-semibold">{t('apartments.electricity') || 'Electricity'}</span>
+                          </div>
+                        )}
+                        
+                        {postDetails.post.has_air_conditioning !== null && postDetails.post.has_air_conditioning !== undefined && postDetails.post.has_air_conditioning && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-cyan-100">
+                              <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-semibold">{t('apartments.airConditioning') || 'Air Conditioning'}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
               <h2 className="font-bold">Nearby Places</h2>
               <div className="bg-white rounded-md px-3 py-2 flex justify-between">
                 <div className="flex gap-2 items-center">
@@ -293,6 +389,21 @@ function EstateInfo() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* Floor Plan Section */}
+              {postDetails.post?.floor_plan_data && (
+                <div className="border-t pt-4 mt-4">
+                  <FloorPlanDisplay 
+                    floorPlanData={postDetails.post.floor_plan_data}
+                    show3D={true}
+                    compact={false}
+                    showEditButton={user && user.id === postDetails.post.user_id}
+                    onEdit={() => {
+                      navigate(`/post/add?edit=${postDetails.post.id}`);
+                    }}
+                  />
                 </div>
               )}
 

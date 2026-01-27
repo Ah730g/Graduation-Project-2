@@ -4,6 +4,7 @@ import { useUserContext } from '../contexts/UserContext';
 import AxiosClient from '../AxiosClient';
 import { usePopup } from '../contexts/PopupContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import FloorPlanDisplay from './FloorPlanDisplay';
 
 function EstateCard({ estate, showSaveButton = true }) {
   const { user } = useUserContext();
@@ -157,6 +158,54 @@ function EstateCard({ estate, showSaveButton = true }) {
             </div>
           )}
         </div>
+        
+        {/* Amenities Icons */}
+        {(estate?.has_elevator || estate?.Has_Elevator || 
+          estate?.has_internet || estate?.Has_Internet || 
+          estate?.has_electricity || estate?.Has_Electricity || 
+          estate?.has_air_conditioning || estate?.Has_Air_Conditioning) && (
+          <div className="flex gap-2 mt-2 flex-wrap items-center">
+            {estate?.has_elevator || estate?.Has_Elevator ? (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900" title={t('apartments.hasElevator') || 'Has Elevator'}>
+                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+              </div>
+            ) : null}
+            {estate?.has_internet || estate?.Has_Internet ? (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900" title={t('apartments.hasInternet') || 'Has Internet'}>
+                <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+              </div>
+            ) : null}
+            {estate?.has_electricity || estate?.Has_Electricity ? (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900" title={t('apartments.hasElectricity') || 'Has Electricity'}>
+                <svg className="w-4 h-4 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            ) : null}
+            {estate?.has_air_conditioning || estate?.Has_Air_Conditioning ? (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900" title={t('apartments.hasAirConditioning') || 'Has Air Conditioning'}>
+                <svg className="w-4 h-4 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+              </div>
+            ) : null}
+          </div>
+        )}
+        
+        {/* Floor Plan Display */}
+        {estate?.floor_plan_data && (
+          <div className="mt-3">
+            <FloorPlanDisplay 
+              floorPlanData={estate.floor_plan_data}
+              compact={true}
+              show3D={true}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,14 +29,14 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // التحقق من وجود المخطط
   if (!editableLayout || !editableLayout.rooms) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 p-6 flex items-center justify-center" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">لا يوجد مخطط للتحرير</h2>
           <p className="text-gray-600 mb-6">يرجى العودة وتوليد مخطط أولاً</p>
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
+            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
           >
             ← العودة
           </button>
@@ -307,15 +307,54 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
         return;
       }
 
+      // تحويل SVG إلى base64 مباشرة لتجنب مشكلة Tainted Canvas
       const svgData = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(svgBlob);
+      
+      // إزالة أي روابط خارجية من SVG لتجنب مشكلة CORS
+      const cleanedSvgData = svgData.replace(/<image[^>]*>/gi, '');
+      
+      // تحويل SVG إلى base64
+      const svgBase64 = btoa(unescape(encodeURIComponent(cleanedSvgData)));
+      const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
 
       const img = new Image();
       
+      // إضافة crossOrigin لتجنب مشكلة Tainted Canvas
+      img.crossOrigin = 'anonymous';
+      
       img.onerror = () => {
-        alert("فشل تحميل الصورة للتصدير");
-        URL.revokeObjectURL(url);
+        // إذا فشل التحميل، جرب طريقة بديلة
+        try {
+          // طريقة بديلة: استخدام canvas مباشرة من SVG
+          const parser = new DOMParser();
+          const svgDoc = parser.parseFromString(cleanedSvgData, 'image/svg+xml');
+          const svgElementClone = svgDoc.documentElement;
+          
+          // إنشاء canvas جديد
+          const rect = svgElement.getBoundingClientRect();
+          canvas.width = rect.width * 2;
+          canvas.height = rect.height * 2;
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // رسم SVG مباشرة على canvas
+          const svgString = new XMLSerializer().serializeToString(svgElementClone);
+          const img2 = new Image();
+          img2.crossOrigin = 'anonymous';
+          img2.onload = () => {
+            ctx.drawImage(img2, 0, 0, canvas.width, canvas.height);
+            const link = document.createElement("a");
+            link.download = `floor-plan-edited-${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+          };
+          img2.onerror = () => {
+            alert("فشل تصدير الصورة. يرجى المحاولة مرة أخرى أو استخدام تصدير SVG بدلاً من ذلك.");
+          };
+          img2.src = svgDataUrl;
+        } catch (fallbackErr) {
+          alert("فشل تحميل الصورة للتصدير: " + (fallbackErr.message || "خطأ غير معروف"));
+        }
       };
 
       img.onload = () => {
@@ -339,16 +378,29 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
 
           const link = document.createElement("a");
           link.download = `floor-plan-edited-${Date.now()}.png`;
-          link.href = canvas.toDataURL("image/png");
-          link.click();
-          URL.revokeObjectURL(url);
+          
+          try {
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+          } catch (dataUrlErr) {
+            // إذا فشل toDataURL، استخدم طريقة بديلة
+            if (dataUrlErr.message.includes('tainted') || dataUrlErr.message.includes('Tainted')) {
+              // استخدام html2canvas كبديل (إذا كان متاحاً) أو تحويل مباشر
+              alert("تعذر تصدير PNG بسبب قيود الأمان. يرجى استخدام تصدير SVG بدلاً من ذلك.");
+            } else {
+              throw dataUrlErr;
+            }
+          }
         } catch (err) {
-          alert("فشل تصدير الصورة: " + (err.message || "خطأ غير معروف"));
-          URL.revokeObjectURL(url);
+          if (err.message && (err.message.includes('tainted') || err.message.includes('Tainted'))) {
+            alert("تعذر تصدير PNG بسبب قيود الأمان. يرجى استخدام تصدير SVG بدلاً من ذلك.");
+          } else {
+            alert("فشل تصدير الصورة: " + (err.message || "خطأ غير معروف"));
+          }
         }
       };
 
-      img.src = url;
+      img.src = svgDataUrl;
     } catch (err) {
       alert("حدث خطأ أثناء تصدير PNG: " + (err.message || "خطأ غير معروف"));
     }
@@ -674,12 +726,12 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 p-6" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
       <div className="max-w-[1800px] mx-auto">
         {/* رأس الصفحة */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-indigo-900">✏️ محرر المخطط الهندسي</h1>
+            <h1 className="text-3xl font-bold text-green-800">✏️ محرر المخطط الهندسي</h1>
             <button
               onClick={() => {
                 // تمرير المخطط المعدل عند العودة
@@ -730,7 +782,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
               className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition ${
                 saving
                   ? "bg-gray-400 cursor-not-allowed text-white"
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
+                  : "bg-yellow-300 hover:bg-yellow-400 text-[#444]"
               }`}
             >
               {saving ? (
@@ -772,7 +824,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
                     onClick={() => setSelectedRoomId(room.id)}
                     className={`p-3 rounded-lg cursor-pointer transition ${
                       selectedRoomId === room.id
-                        ? "bg-indigo-100 border-2 border-indigo-500"
+                        ? "bg-yellow-100 border-2 border-yellow-500"
                         : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
                     }`}
                   >
@@ -883,7 +935,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
               <div className="bg-white rounded-xl shadow-lg p-5">
                 <button
                   onClick={() => setShowDoorsWindowsModal(true)}
-                  className="w-full p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
+                  className="w-full p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
                 >
                   🚪 إدارة الأبواب والنوافذ
                 </button>
@@ -1147,7 +1199,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
                   <div className="flex justify-end pt-4 border-t">
                     <button
                       onClick={() => setShowDoorsWindowsModal(false)}
-                      className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
+                      className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
                     >
                       إغلاق
                     </button>
@@ -1173,7 +1225,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
                           onClick={() => setSelectedFurnitureId(item.id)}
                           className={`p-2 rounded-lg cursor-pointer transition text-sm ${
                             selectedFurnitureId === item.id
-                              ? "bg-indigo-100 border-2 border-indigo-500"
+                              ? "bg-yellow-100 border-2 border-yellow-500"
                               : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
                           }`}
                         >

@@ -4,8 +4,12 @@ import FloorPlanSVG from "./FloorPlanSVG";
 import FloorPlanEditor from "./FloorPlanEditor";
 import FloorPlan3D from "../components/floorplan/FloorPlan3D";
 import { convert2DTo3D } from "../lib/floorplan3d/converter";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
-export default function FloorPlanManualBuilder() {
+export default function FloorPlanManualBuilder({ onFloorPlanCreated = null }) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const returnTo = searchParams.get('returnTo');
   const [propertyInfo, setPropertyInfo] = useState({
     title: "",
     property_type: "apartment",
@@ -382,15 +386,23 @@ export default function FloorPlanManualBuilder() {
         return;
       }
 
+      // تحويل SVG إلى base64 مباشرة لتجنب مشكلة Tainted Canvas
       const svgData = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(svgBlob);
+      
+      // إزالة أي روابط خارجية من SVG لتجنب مشكلة CORS
+      const cleanedSvgData = svgData.replace(/<image[^>]*>/gi, '');
+      
+      // تحويل SVG إلى base64
+      const svgBase64 = btoa(unescape(encodeURIComponent(cleanedSvgData)));
+      const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
 
       const img = new Image();
       
+      // إضافة crossOrigin لتجنب مشكلة Tainted Canvas
+      img.crossOrigin = 'anonymous';
+      
       img.onerror = () => {
-        setError("فشل تحميل الصورة للتصدير");
-        URL.revokeObjectURL(url);
+        setError("فشل تحميل الصورة للتصدير. يرجى المحاولة مرة أخرى أو استخدام تصدير SVG.");
       };
 
       img.onload = () => {
@@ -414,16 +426,28 @@ export default function FloorPlanManualBuilder() {
 
           const link = document.createElement("a");
           link.download = `floor-plan-manual-${Date.now()}.png`;
-          link.href = canvas.toDataURL("image/png");
-          link.click();
-          URL.revokeObjectURL(url);
+          
+          try {
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+          } catch (dataUrlErr) {
+            // إذا فشل toDataURL، استخدم طريقة بديلة
+            if (dataUrlErr.message && (dataUrlErr.message.includes('tainted') || dataUrlErr.message.includes('Tainted'))) {
+              setError("تعذر تصدير PNG بسبب قيود الأمان. يرجى استخدام تصدير SVG بدلاً من ذلك.");
+            } else {
+              throw dataUrlErr;
+            }
+          }
         } catch (err) {
-          setError("فشل تصدير الصورة: " + (err.message || "خطأ غير معروف"));
-          URL.revokeObjectURL(url);
+          if (err.message && (err.message.includes('tainted') || err.message.includes('Tainted'))) {
+            setError("تعذر تصدير PNG بسبب قيود الأمان. يرجى استخدام تصدير SVG بدلاً من ذلك.");
+          } else {
+            setError("فشل تصدير الصورة: " + (err.message || "خطأ غير معروف"));
+          }
         }
       };
 
-      img.src = url;
+      img.src = svgDataUrl;
     } catch (err) {
       setError("حدث خطأ أثناء تصدير PNG: " + (err.message || "خطأ غير معروف"));
     }
@@ -475,7 +499,20 @@ export default function FloorPlanManualBuilder() {
         initialLayout={result.layout}
         title={result.title}
         originalResult={result}
-        onClose={() => setShowEditor(false)}
+        onClose={() => {
+          setShowEditor(false);
+          // إذا كان هناك callback وتم التعديل، استدعيه
+          if (onFloorPlanCreated) {
+            onFloorPlanCreated(result);
+          } else if (returnTo === 'addPost') {
+            // حفظ المخطط المحدث والعودة
+            localStorage.setItem('savedFloorPlanForAddPost', JSON.stringify(result));
+            const returnUrl = localStorage.getItem('floorPlanReturnUrl') || '/post/add';
+            localStorage.removeItem('floorPlanReturnUrl');
+            localStorage.removeItem('floorPlanReturnData');
+            navigate(returnUrl);
+          }
+        }}
         onLayoutUpdate={(updatedLayout) => {
           setResult((prevResult) => ({
             ...prevResult,
@@ -487,11 +524,27 @@ export default function FloorPlanManualBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 p-6" style={{ direction: "rtl", fontFamily: "Tahoma, Arial" }}>
       <div className="max-w-7xl mx-auto">
+        {/* زر العودة */}
+        {returnTo === 'addPost' && (
+          <div className="mb-4">
+            <button
+              onClick={() => {
+                const returnUrl = localStorage.getItem('floorPlanReturnUrl') || '/post/add';
+                localStorage.removeItem('floorPlanReturnUrl');
+                localStorage.removeItem('floorPlanReturnData');
+                navigate(returnUrl);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+            >
+              ← العودة إلى إضافة الشقة
+            </button>
+          </div>
+        )}
         {/* العنوان */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-indigo-900 mb-3">🏗️ بناء المخطط يدوياً</h1>
+          <h1 className="text-4xl font-bold text-green-800 mb-3">🏗️ بناء المخطط يدوياً</h1>
           <p className="text-gray-600 text-lg">أدخل بيانات العقار والغرف يدوياً لإنشاء مخطط هندسي تفصيلي</p>
         </div>
 
@@ -500,11 +553,11 @@ export default function FloorPlanManualBuilder() {
           <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-gray-700">تقدم الإدخال</span>
-              <span className="text-sm font-bold text-indigo-600">{getFormProgress()}%</span>
+              <span className="text-sm font-bold text-green-600">{getFormProgress()}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div 
-                className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
+                className="bg-green-600 h-3 rounded-full transition-all duration-300"
                 style={{ width: `${getFormProgress()}%` }}
               />
             </div>
@@ -609,7 +662,7 @@ export default function FloorPlanManualBuilder() {
               </button>
               <button 
                 onClick={() => addCommonRoom('bathroom', 'حمام', 2.5, 2.5)} 
-                className="px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium transition"
+                className="px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-[#444] rounded-lg text-sm font-medium transition"
               >
                 🚿 حمام
               </button>
@@ -657,7 +710,7 @@ export default function FloorPlanManualBuilder() {
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
                             {room.width_m} × {room.height_m} م
                           </span>
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
+                          <span className="px-2 py-1 bg-yellow-100 text-[#444] rounded text-xs">
                             {room.furniture?.length || 0} قطعة أثاث
                           </span>
                         </div>
@@ -768,7 +821,7 @@ export default function FloorPlanManualBuilder() {
                         </label>
                         <button
                           onClick={() => setSelectedRoomForFurniture(room.id)}
-                          className="text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg font-medium transition"
+                          className="text-sm bg-yellow-100 hover:bg-yellow-200 text-[#444] px-3 py-1 rounded-lg font-medium transition"
                         >
                           ➕ إضافة أثاث
                         </button>
@@ -776,7 +829,7 @@ export default function FloorPlanManualBuilder() {
                       
                       {/* عرض الأثاث الموجود */}
                       {room.furniture && room.furniture.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex flex-wrap gap-2 mb-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                           {room.furniture.map((furnitureType, furnitureIdx) => {
                             const furnitureOptions = getFurnitureByRoomType(room.type);
                             const furnitureInfo = furnitureOptions.find(f => f.type === furnitureType);
@@ -954,14 +1007,14 @@ export default function FloorPlanManualBuilder() {
                         }}
                         className={`p-4 rounded-lg border-2 transition ${
                           isSelected
-                            ? 'bg-purple-100 border-purple-500 text-purple-700'
-                            : 'bg-gray-50 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                            ? 'bg-yellow-100 border-yellow-500 text-[#444]'
+                            : 'bg-gray-50 border-gray-200 hover:border-yellow-300 hover:bg-yellow-50'
                         }`}
                       >
                         <div className="text-3xl mb-2">{furniture.icon}</div>
                         <div className="text-sm font-medium">{furniture.label}</div>
                         {isSelected && (
-                          <div className="text-xs mt-1 text-purple-600">✓ محددة</div>
+                          <div className="text-xs mt-1 text-green-600">✓ محددة</div>
                         )}
                       </button>
                     );
@@ -974,7 +1027,7 @@ export default function FloorPlanManualBuilder() {
                 
                 <button
                   onClick={() => setSelectedRoomForFurniture(null)}
-                  className="w-full mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
+                  className="w-full mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
                 >
                   إغلاق
                 </button>
@@ -1029,23 +1082,42 @@ export default function FloorPlanManualBuilder() {
                   🏠 {result.property_type === "apartment" ? "شقة" : result.property_type}
                 </span>
                 {result.total_area_m2 && (
-                  <span className="bg-purple-100 text-purple-800 px-4 py-2 rounded-full font-medium">📐 {result.total_area_m2} م²</span>
+                  <span className="bg-yellow-200 text-[#444] px-4 py-2 rounded-full font-medium">📐 {result.total_area_m2} م²</span>
                 )}
-                <span className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full font-medium">🚪 {result.layout?.rooms?.length || 0} غرف</span>
+                <span className="bg-green-200 text-green-800 px-4 py-2 rounded-full font-medium">🚪 {result.layout?.rooms?.length || 0} غرف</span>
               </div>
             </div>
 
             {/* أزرار التصدير والتعديل */}
             <div className="flex gap-3 mb-6 flex-wrap">
+              {(onFloorPlanCreated || returnTo === 'addPost') && (
+                <button
+                  onClick={() => {
+                    if (onFloorPlanCreated) {
+                      onFloorPlanCreated(result);
+                    } else if (returnTo === 'addPost') {
+                      // حفظ المخطط في localStorage والعودة
+                      localStorage.setItem('savedFloorPlanForAddPost', JSON.stringify(result));
+                      const returnUrl = localStorage.getItem('floorPlanReturnUrl') || '/post/add';
+                      localStorage.removeItem('floorPlanReturnUrl');
+                      localStorage.removeItem('floorPlanReturnData');
+                      navigate(returnUrl);
+                    }
+                  }}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg"
+                >
+                  ✅ استخدام هذا المخطط والعودة
+                </button>
+              )}
               <button
                 onClick={() => setShowEditor(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-medium transition"
+                className="flex items-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-[#444] px-5 py-2 rounded-lg font-medium transition"
               >
                 ✏️ تعديل المخطط
               </button>
               <button
                 onClick={() => setShow3D(!show3D)}
-                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium transition"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition"
               >
                 {show3D ? "📐 عرض 2D" : "🎮 عرض 3D"}
               </button>

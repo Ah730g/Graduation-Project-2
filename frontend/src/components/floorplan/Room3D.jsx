@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Text } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { createFloorMaterial, createInternalWallMaterial, createExternalWallMaterial } from '../../lib/floorplan3d/materials';
 import Wall3D from './Wall3D';
@@ -53,45 +53,77 @@ export default function Room3DComponent({ room }) {
   // نص المقاسات
   const dimensionsText = `${room.width_m} × ${room.height_m} م`;
 
+  // حساب حجم الخط بناءً على حجم الغرفة (مشابه لما كان في Text)
+  const roomNameFontSize = Math.min(room.width_m * 0.13 * 16, 16);
+  const dimensionsFontSize = Math.min(room.width_m * 0.1 * 14, 14);
+
   return (
     <group>
       {/* اسم الغرفة - في النصف العلوي من الغرفة، موازي للسقف */}
-      <Text
+      <Html
         position={roomNamePosition}
-        fontSize={Math.min(room.width_m * 0.13, 1.0)} // حجم أصغر قليلاً لتقليل التداخل
-        color="#1a1a1a"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={room.width_m * 0.8} // عرض أقل لتقليل التداخل
-        textAlign="center"
-        outlineWidth={0.05}
-        outlineColor="#ffffff"
-        outlineOpacity={0.9}
-        depthOffset={-5} // يجعل النص يظهر فوق العناصر الأخرى
-        renderOrder={1000} // يضمن أن النص يظهر فوق كل شيء
-        rotation={[-Math.PI / 2, 0, 0]} // دوران 90 درجة ليكون موازياً للأرضية (السقف)
+        center
+        transform
+        occlude
+        style={{
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}
       >
-        {room.name}
-      </Text>
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            padding: '6px 14px',
+            borderRadius: '6px',
+            border: '2px solid #1a1a1a',
+            fontSize: `${roomNameFontSize}px`,
+            fontWeight: 'bold',
+            color: '#1a1a1a',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            fontFamily: 'Tahoma, Arial, sans-serif',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+            transform: 'rotateX(90deg)',
+            transformStyle: 'preserve-3d',
+            maxWidth: `${room.width_m * 0.8 * 16}px`,
+          }}
+        >
+          {room.name}
+        </div>
+      </Html>
 
       {/* المقاسات - في النصف السفلي من الغرفة، موازية للسقف */}
-      <Text
+      <Html
         position={dimensionsPosition}
-        fontSize={Math.min(room.width_m * 0.1, 0.75)} // حجم أصغر لتقليل التداخل
-        color="#4a4a4a"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={room.width_m * 0.75} // عرض أقل
-        textAlign="center"
-        outlineWidth={0.03}
-        outlineColor="#ffffff"
-        outlineOpacity={0.75}
-        depthOffset={-4} // عمق أقل قليلاً من اسم الغرفة
-        renderOrder={999} // يظهر بعد اسم الغرفة
-        rotation={[-Math.PI / 2, 0, 0]} // دوران 90 درجة ليكون موازياً للأرضية (السقف)
+        center
+        transform
+        occlude
+        style={{
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}
       >
-        {dimensionsText}
-      </Text>
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '4px 12px',
+            borderRadius: '6px',
+            border: '1.5px solid #4a4a4a',
+            fontSize: `${dimensionsFontSize}px`,
+            fontWeight: '600',
+            color: '#4a4a4a',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            fontFamily: 'Tahoma, Arial, sans-serif',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+            transform: 'rotateX(90deg)',
+            transformStyle: 'preserve-3d',
+            maxWidth: `${room.width_m * 0.75 * 14}px`,
+          }}
+        >
+          {dimensionsText}
+        </div>
+      </Html>
 
       {/* الأرضية */}
       <mesh

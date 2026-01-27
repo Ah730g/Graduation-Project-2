@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AxiosClient from '../AxiosClient';
 import { useUserContext } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import FloorPlanDisplay from './FloorPlanDisplay';
 
 function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = false }) {
   const [post, setPost] = useState(null);
@@ -15,6 +16,13 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
     Bedrooms: '',
     Bathrooms: '',
     status: '',
+    floor_number: '',
+    has_elevator: false,
+    floor_condition: '',
+    has_internet: false,
+    has_electricity: false,
+    has_air_conditioning: false,
+    building_condition: '',
   });
   const { setMessage } = useUserContext();
   const { t, translateStatus } = useLanguage();
@@ -40,6 +48,13 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
           Bedrooms: postData.Bedrooms || '',
           Bathrooms: postData.Bathrooms || '',
           status: postData.status || 'pending',
+          floor_number: postData.floor_number || '',
+          has_elevator: postData.has_elevator || false,
+          floor_condition: postData.floor_condition || '',
+          has_internet: postData.has_internet || false,
+          has_electricity: postData.has_electricity || false,
+          has_air_conditioning: postData.has_air_conditioning || false,
+          building_condition: postData.building_condition || '',
         });
         setLoading(false);
       })
@@ -68,9 +83,10 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
   };
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
@@ -210,6 +226,116 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               </div>
             </div>
 
+            {/* Apartment Details Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-bold text-[#444] mb-4">{t('apartments.apartmentDetails') || 'Apartment Details'}</h3>
+              
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#444] mb-2">
+                    {t('apartments.floorNumber') || 'Floor Number'}
+                  </label>
+                  <input
+                    type="number"
+                    name="floor_number"
+                    value={formData.floor_number}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#444] mb-2">
+                    {t('apartments.floorCondition') || 'Floor Condition'}
+                  </label>
+                  <select
+                    name="floor_condition"
+                    value={formData.floor_condition}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                  >
+                    <option value="">{t('apartments.selectOption') || 'Select...'}</option>
+                    <option value="excellent">{t('apartments.excellent') || 'Excellent'}</option>
+                    <option value="good">{t('apartments.good') || 'Good'}</option>
+                    <option value="fair">{t('apartments.fair') || 'Fair'}</option>
+                    <option value="poor">{t('apartments.poor') || 'Poor'}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#444] mb-2">
+                    {t('apartments.buildingCondition') || 'Building Condition'}
+                  </label>
+                  <select
+                    name="building_condition"
+                    value={formData.building_condition}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                  >
+                    <option value="">{t('apartments.selectOption') || 'Select...'}</option>
+                    <option value="excellent">{t('apartments.excellent') || 'Excellent'}</option>
+                    <option value="good">{t('apartments.good') || 'Good'}</option>
+                    <option value="fair">{t('apartments.fair') || 'Fair'}</option>
+                    <option value="poor">{t('apartments.poor') || 'Poor'}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition">
+                  <input
+                    type="checkbox"
+                    name="has_elevator"
+                    checked={formData.has_elevator}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <span className="text-sm font-semibold text-[#444]">
+                    {t('apartments.hasElevator') || 'Has Elevator'}
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition">
+                  <input
+                    type="checkbox"
+                    name="has_internet"
+                    checked={formData.has_internet}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <span className="text-sm font-semibold text-[#444]">
+                    {t('apartments.hasInternet') || 'Has Internet'}
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition">
+                  <input
+                    type="checkbox"
+                    name="has_electricity"
+                    checked={formData.has_electricity}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <span className="text-sm font-semibold text-[#444]">
+                    {t('apartments.hasElectricity') || 'Has Electricity'}
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition">
+                  <input
+                    type="checkbox"
+                    name="has_air_conditioning"
+                    checked={formData.has_air_conditioning}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <span className="text-sm font-semibold text-[#444]">
+                    {t('apartments.hasAirConditioning') || 'Has Air Conditioning'}
+                  </span>
+                </label>
+              </div>
+            </div>
+
             <div className="flex gap-3 justify-end mt-4">
               <button
                 type="button"
@@ -269,6 +395,69 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
               )}
             </div>
 
+            {/* Apartment Details Section */}
+            {(post?.floor_number || 
+              post?.has_elevator !== null && post?.has_elevator !== undefined || 
+              post?.floor_condition || 
+              post?.has_internet !== null && post?.has_internet !== undefined || 
+              post?.has_electricity !== null && post?.has_electricity !== undefined || 
+              post?.has_air_conditioning !== null && post?.has_air_conditioning !== undefined || 
+              post?.building_condition) && (
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-lg font-bold text-[#444] mb-3">{t('apartments.apartmentDetails') || 'Apartment Details'}</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {post?.floor_number && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.floorNumber') || 'Floor Number'}: </span>
+                      <span className="text-[#888]">{post.floor_number}</span>
+                    </div>
+                  )}
+                  
+                  {post?.has_elevator !== null && post?.has_elevator !== undefined && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.elevator') || 'Elevator'}: </span>
+                      <span className="text-[#888]">{post.has_elevator ? (t('apartments.yes') || 'Yes') : (t('apartments.no') || 'No')}</span>
+                    </div>
+                  )}
+                  
+                  {post?.floor_condition && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.floorCondition') || 'Floor Condition'}: </span>
+                      <span className="text-[#888] capitalize">{post.floor_condition}</span>
+                    </div>
+                  )}
+                  
+                  {post?.building_condition && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.buildingCondition') || 'Building Condition'}: </span>
+                      <span className="text-[#888] capitalize">{post.building_condition}</span>
+                    </div>
+                  )}
+                  
+                  {post?.has_internet !== null && post?.has_internet !== undefined && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.internet') || 'Internet'}: </span>
+                      <span className="text-[#888]">{post.has_internet ? (t('apartments.yes') || 'Yes') : (t('apartments.no') || 'No')}</span>
+                    </div>
+                  )}
+                  
+                  {post?.has_electricity !== null && post?.has_electricity !== undefined && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.electricity') || 'Electricity'}: </span>
+                      <span className="text-[#888]">{post.has_electricity ? (t('apartments.yes') || 'Yes') : (t('apartments.no') || 'No')}</span>
+                    </div>
+                  )}
+                  
+                  {post?.has_air_conditioning !== null && post?.has_air_conditioning !== undefined && (
+                    <div>
+                      <span className="text-sm font-semibold text-[#444]">{t('apartments.airConditioning') || 'Air Conditioning'}: </span>
+                      <span className="text-[#888]">{post.has_air_conditioning ? (t('apartments.yes') || 'Yes') : (t('apartments.no') || 'No')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {post?.Description && (
               <div>
                 <span className="text-sm font-semibold text-[#444]">{t('admin.description')}: </span>
@@ -284,6 +473,17 @@ function PostDetailsModal({ postId, isOpen, onClose, onUpdate, isEditMode = fals
                     <img key={idx} src={img.Image_URL} alt={`${post.Title} ${idx + 1}`} className="w-full h-24 object-cover rounded-md" />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {post?.floor_plan_data && (
+              <div className="mt-4">
+                <span className="text-sm font-semibold text-[#444] block mb-2">{t('apartments.floorPlan') || 'Floor Plan'}: </span>
+                <FloorPlanDisplay 
+                  floorPlanData={post.floor_plan_data}
+                  compact={false}
+                  show3D={true}
+                />
               </div>
             )}
 

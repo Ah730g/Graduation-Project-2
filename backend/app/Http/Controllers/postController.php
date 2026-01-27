@@ -107,6 +107,11 @@ class postController extends Controller
                 $filledFields++;
             }
             
+            // Check floor plan
+            if ($request->has('floor_plan_data') && !empty($request->floor_plan_data)) {
+                $filledFields++;
+            }
+            
             if ($filledFields < 4) {
                 return response()->json([
                     'message' => 'Please fill at least 4 fields to save as draft.',
@@ -154,6 +159,14 @@ class postController extends Controller
             'Bus' => $request->bus ?? 0,
             'Resturant' => $request->resturant ?? 0,
             'School' => $request->school ?? 0,
+            'floor_plan_data' => $request->floor_plan_data ?? null,
+            'floor_number' => $request->floor_number ?? null,
+            'has_elevator' => $request->has('has_elevator') ? (bool)$request->has_elevator : null,
+            'floor_condition' => $request->floor_condition ?? null,
+            'has_internet' => $request->has('has_internet') ? (bool)$request->has_internet : null,
+            'has_electricity' => $request->has('has_electricity') ? (bool)$request->has_electricity : null,
+            'has_air_conditioning' => $request->has('has_air_conditioning') ? (bool)$request->has_air_conditioning : null,
+            'building_condition' => $request->building_condition ?? null,
         ];
         
         $post = Post::create($postData);
@@ -273,7 +286,7 @@ class postController extends Controller
         }
         
         // Update post data
-        $post->update([
+        $updateData = [
             'Title' => $request->title ?? $post->Title,
             'Price' => $request->price ?? $post->Price,
             'Address' => $request->address ?? $post->Address,
@@ -292,8 +305,24 @@ class postController extends Controller
             'Bus' => $request->bus ?? $post->Bus,
             'Resturant' => $request->resturant ?? $post->Resturant,
             'School' => $request->school ?? $post->School,
-            'status' => $isDraft ? 'draft' : ($post->status === 'draft' ? 'pending' : $post->status),
-        ]);
+            'floor_number' => $request->has('floor_number') ? $request->floor_number : $post->floor_number,
+            'has_elevator' => $request->has('has_elevator') ? (bool)$request->has_elevator : $post->has_elevator,
+            'floor_condition' => $request->has('floor_condition') ? $request->floor_condition : $post->floor_condition,
+            'has_internet' => $request->has('has_internet') ? (bool)$request->has_internet : $post->has_internet,
+            'has_electricity' => $request->has('has_electricity') ? (bool)$request->has_electricity : $post->has_electricity,
+            'has_air_conditioning' => $request->has('has_air_conditioning') ? (bool)$request->has_air_conditioning : $post->has_air_conditioning,
+            'building_condition' => $request->has('building_condition') ? $request->building_condition : $post->building_condition,
+        ];
+        
+        // Handle floor_plan_data - only update if provided
+        if ($request->has('floor_plan_data')) {
+            $updateData['floor_plan_data'] = $request->floor_plan_data;
+        }
+        
+        // Update status
+        $updateData['status'] = $isDraft ? 'draft' : ($post->status === 'draft' ? 'pending' : $post->status);
+        
+        $post->update($updateData);
         
         // Update images if provided
         if ($request->has('images') && is_array($request->input('images'))) {
