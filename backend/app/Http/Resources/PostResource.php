@@ -59,7 +59,19 @@ class PostResource extends JsonResource
                         'price' => $dp->price,
                     ];
                 });
-            }) ?? []
+            }) ?? [],
+            "floor_number" => $this->floor_number ?? null,
+            "has_elevator" => $this->has_elevator ?? null,
+            "floor_condition" => $this->floor_condition ?? null,
+            "has_internet" => $this->has_internet ?? null,
+            "has_electricity" => $this->has_electricity ?? null,
+            "has_air_conditioning" => $this->has_air_conditioning ?? null,
+            "building_condition" => $this->building_condition ?? null,
+            "floor_plan_data" => $this->floor_plan_data ? (
+                is_string($this->floor_plan_data) 
+                    ? json_decode($this->floor_plan_data, true) 
+                    : $this->floor_plan_data
+            ) : null,
         ];
     }
 }

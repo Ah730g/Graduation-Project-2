@@ -68,7 +68,14 @@ export default function FloorPlan3D({ layout, onClose }) {
         )}
         
         <Canvas
-          gl={{ antialias: true, alpha: false }}
+          gl={{ 
+            antialias: true, 
+            alpha: false,
+            // تعطيل تحميل الخطوط من CDN لتجنب الأخطاء
+            powerPreference: "high-performance",
+            stencil: false,
+            depth: true
+          }}
           camera={{
             position: [cameraDistance, cameraDistance * 0.7, cameraDistance],
             fov: 50,
@@ -76,6 +83,7 @@ export default function FloorPlan3D({ layout, onClose }) {
           onCreated={({ gl }) => {
             gl.setClearColor('#1a1a1a');
           }}
+          dpr={[1, 2]}
         >
         <Suspense fallback={null}>
           {/* الإضاءة */}

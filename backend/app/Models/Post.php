@@ -31,6 +31,14 @@ class Post extends Model
         'Resturant',
         'School',
         'status',
+        'floor_plan_data',
+        'floor_number',
+        'has_elevator',
+        'floor_condition',
+        'has_internet',
+        'has_electricity',
+        'has_air_conditioning',
+        'building_condition',
     ];
     public function user() : BelongsTo
     {

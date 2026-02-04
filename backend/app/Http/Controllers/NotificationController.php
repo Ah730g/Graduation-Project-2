@@ -30,17 +30,23 @@ class NotificationController extends Controller
      */
     public function unreadCount(Request $request)
     {
-        $user = $request->user();
-        
-        if (!$user) {
-            return response()->json(['count' => 0]);
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json(['count' => 0]);
+            }
+
+            $count = Notification::where('user_id', $user->id)
+                ->where('read', false)
+                ->count();
+
+            return response()->json(['count' => $count]);
+        } catch (\Exception $e) {
+            \Log::error('Error in unreadCount: ' . $e->getMessage());
+            // Return 0 if there's an error (e.g., table doesn't exist)
+            return response()->json(['count' => 0], 200);
         }
-
-        $count = Notification::where('user_id', $user->id)
-            ->where('read', false)
-            ->count();
-
-        return response()->json(['count' => $count]);
     }
 
     /**

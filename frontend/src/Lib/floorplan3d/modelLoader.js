@@ -15,11 +15,22 @@ const DRACO_DECODER_PATH = 'https://www.gstatic.com/draco/versioned/decoders/1.5
 
 // إنشاء DRACOLoader مرة واحدة فقط (shared instance)
 let dracoLoaderInstance = null;
+let dracoLoaderFailed = false;
 
 function getDracoLoader() {
+  if (dracoLoaderFailed) {
+    return null; // لا تحاول استخدام Draco إذا فشل سابقاً
+  }
+  
   if (!dracoLoaderInstance) {
-    dracoLoaderInstance = new DRACOLoader();
-    dracoLoaderInstance.setDecoderPath(DRACO_DECODER_PATH);
+    try {
+      dracoLoaderInstance = new DRACOLoader();
+      dracoLoaderInstance.setDecoderPath(DRACO_DECODER_PATH);
+    } catch (error) {
+      console.warn('[modelLoader] Failed to initialize DRACOLoader, will skip Draco compression:', error);
+      dracoLoaderFailed = true;
+      return null;
+    }
   }
   return dracoLoaderInstance;
 }
@@ -60,59 +71,63 @@ export function useFurnitureModel(furnitureType) {
     return null; // لا يوجد نموذج لهذا النوع
   }
 
-  try {
-    // useLoader من react-three/fiber مع GLTFLoader
-    // extension function لربط DRACOLoader (للملفات المضغوطة بـ Draco)
-    const gltf = useLoader(
-      GLTFLoader,
-      modelPath,
-      (loader) => {
-        loader.setDRACOLoader(getDracoLoader());
+  // useLoader من react-three/fiber مع GLTFLoader
+  // إذا فشل التحميل، useLoader سيرمي خطأ وسيتم التعامل معه في ErrorBoundary
+  // extension function لربط DRACOLoader (للملفات المضغوطة بـ Draco)
+  const gltf = useLoader(
+    GLTFLoader,
+    modelPath,
+    (loader) => {
+      const dracoLoader = getDracoLoader();
+      if (dracoLoader) {
+        try {
+          loader.setDRACOLoader(dracoLoader);
+        } catch (dracoError) {
+          console.warn(`[modelLoader] Failed to set DRACOLoader for ${furnitureType}, continuing without Draco:`, dracoError);
+          dracoLoaderFailed = true;
+        }
       }
-    );
+    }
+  );
+  
+  // نسخ النموذج لتجنب تعديل النموذج الأصلي
+  const clonedScene = useMemo(() => {
+    if (!gltf || !gltf.scene) {
+      console.warn(`[Furniture3D] Scene is null for ${furnitureType} from ${modelPath}`);
+      return null;
+    }
     
-    // نسخ النموذج لتجنب تعديل النموذج الأصلي
-    const clonedScene = useMemo(() => {
-      if (!gltf || !gltf.scene) {
-        console.warn(`[Furniture3D] Scene is null for ${furnitureType} from ${modelPath}`);
-        return null;
+    try {
+      const clone = gltf.scene.clone();
+      
+      // تطبيق الدوران التصحيحي إذا كان موجوداً
+      const rotationCorrection = FURNITURE_ROTATION_CORRECTION[furnitureType];
+      if (rotationCorrection) {
+        clone.rotation.set(...rotationCorrection);
+        console.log(`[Furniture3D] Applied rotation correction for ${furnitureType}:`, rotationCorrection);
       }
       
-      try {
-        const clone = gltf.scene.clone();
-        
-        // تطبيق الدوران التصحيحي إذا كان موجوداً
-        const rotationCorrection = FURNITURE_ROTATION_CORRECTION[furnitureType];
-        if (rotationCorrection) {
-          clone.rotation.set(...rotationCorrection);
-          console.log(`[Furniture3D] Applied rotation correction for ${furnitureType}:`, rotationCorrection);
-        }
-        
-        // تحسين الأداء
-        clone.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.castShadow = false;
-            child.receiveShadow = false;
-            // تحسين المواد
-            if (child.material instanceof THREE.MeshStandardMaterial) {
-              child.material.roughness = 0.7;
-              child.material.metalness = 0.1;
-            }
+      // تحسين الأداء
+      clone.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+          // تحسين المواد
+          if (child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.roughness = 0.7;
+            child.material.metalness = 0.1;
           }
-        });
-        console.log(`[Furniture3D] Successfully loaded model: ${furnitureType} from ${modelPath}`);
-        return clone;
-      } catch (cloneError) {
-        console.error(`[Furniture3D] Error cloning model ${furnitureType}:`, cloneError);
-        return null;
-      }
-    }, [gltf, furnitureType, modelPath]);
+        }
+      });
+      console.log(`[Furniture3D] Successfully loaded model: ${furnitureType} from ${modelPath}`);
+      return clone;
+    } catch (cloneError) {
+      console.error(`[Furniture3D] Error cloning model ${furnitureType}:`, cloneError);
+      return null;
+    }
+  }, [gltf, furnitureType, modelPath]);
 
-    return clonedScene;
-  } catch (error) {
-    console.error(`[Furniture3D] Failed to load model for ${furnitureType} from ${modelPath}:`, error);
-    return null;
-  }
+  return clonedScene;
 }
 
 /**

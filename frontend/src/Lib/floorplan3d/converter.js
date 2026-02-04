@@ -22,6 +22,32 @@ export function convert2DTo3D(layout, wallHeight = DEFAULT_WALL_HEIGHT, ceilingH
  * تحويل غرفة واحدة من 2D إلى 3D
  */
 function convertRoomTo3D(room, wallHeight, ceilingHeight, layout) {
+  // Defensive check: ensure room has required properties
+  if (!room || room.x_m === undefined || room.y_m === undefined || 
+      room.width_m === undefined || room.height_m === undefined) {
+    console.error('convertRoomTo3D: Missing required room properties', room);
+    // Return a minimal 3D room structure to prevent crashes
+    return {
+      ...room,
+      geometry: {
+        floor: {
+          position: [0, 0, 0],
+          size: [1, DEFAULT_FLOOR_THICKNESS, 1],
+        },
+        walls: [],
+        ceiling: {
+          position: [0, ceilingHeight, 0],
+          size: [1, DEFAULT_FLOOR_THICKNESS, 1],
+        },
+      },
+      furniture3D: [],
+      doors3D: [],
+      windows3D: [],
+      wallHeight,
+      ceilingHeight,
+    };
+  }
+
   const { x_m, y_m, width_m, height_m } = room;
 
   // حساب موضع الأرضية (في Three.js، Y هو الارتفاع)
@@ -36,7 +62,9 @@ function convertRoomTo3D(room, wallHeight, ceilingHeight, layout) {
   const ceilingSize = [width_m, DEFAULT_FLOOR_THICKNESS, height_m];
 
   // تحويل الأثاث إلى 3D
-  const furniture3D = convertFurnitureTo3D(room.furniture_items || [], room, wallHeight);
+  // Handle both furniture_items and furniture property names
+  const furnitureItems = room.furniture_items || room.furniture || [];
+  const furniture3D = convertFurnitureTo3D(furnitureItems, room, wallHeight);
 
   // تحويل الأبواب إلى 3D
   const doors3D = convertDoorsTo3D(room.doors || [], room, wallHeight);
@@ -78,10 +106,14 @@ function generateWalls(room, wallHeight, layout) {
   const walls = [];
   const doors = room.doors || [];
 
+  // Get layout dimensions with fallback
+  const totalWidthM = layout?.total_width_m || (x_m + width_m);
+  const totalHeightM = layout?.total_height_m || (y_m + height_m);
+
   // تحديد الجدران الخارجية (على حدود المخطط الكلي)
   const isNorthExternal = y_m <= tolerance; // الجدار الشمالي على الحد الشمالي
-  const isSouthExternal = Math.abs((y_m + height_m) - layout.total_height_m) <= tolerance; // الجدار الجنوبي على الحد الجنوبي
-  const isEastExternal = Math.abs((x_m + width_m) - layout.total_width_m) <= tolerance; // الجدار الشرقي على الحد الشرقي
+  const isSouthExternal = Math.abs((y_m + height_m) - totalHeightM) <= tolerance; // الجدار الجنوبي على الحد الجنوبي
+  const isEastExternal = Math.abs((x_m + width_m) - totalWidthM) <= tolerance; // الجدار الشرقي على الحد الشرقي
   const isWestExternal = x_m <= tolerance; // الجدار الغربي على الحد الغربي
 
   // الجدار الشمالي (North) - مع فراغات للأبواب
@@ -288,10 +320,23 @@ function generateWalls(room, wallHeight, layout) {
  * تحويل الأثاث من 2D إلى 3D
  */
 function convertFurnitureTo3D(furnitureItems, room, wallHeight) {
-  const scale = room.width_px / room.width_m; // تحويل من pixels إلى meters
+  // Defensive check: ensure room has required properties
+  if (!room || !room.width_m || room.width_m <= 0) {
+    console.warn('convertFurnitureTo3D: Missing or invalid room dimensions', room);
+    return [];
+  }
+
+  // Calculate scale - use width_px if available, otherwise estimate from width_m
+  const scale = room.width_px && room.width_px > 0 
+    ? room.width_px / room.width_m 
+    : 50; // Default scale (50px per meter)
   const furniture3D = [];
   const wallThickness = DEFAULT_WALL_THICKNESS;
   const padding = 0.1; // مسافة أمان من الجدران (10 سم)
+
+  if (!Array.isArray(furnitureItems)) {
+    return [];
+  }
 
   for (const item of furnitureItems) {
     const dimensions = FURNITURE_DIMENSIONS[item.type] || { width: 0.5, height: 0.5, depth: 0.5 };
