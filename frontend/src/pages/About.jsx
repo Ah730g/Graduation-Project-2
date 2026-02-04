@@ -8,7 +8,7 @@ import { usePopup } from '../contexts/PopupContext';
 import Notification from '../components/Notification';
 
 function About() {
-  const { user, message } = useUserContext();
+  const { user, message, refreshUser } = useUserContext();
   const { t, language } = useLanguage();
   const { showConfirm, showToast } = usePopup();
   const [userPosts, setUserPosts] = useState([]);
@@ -18,6 +18,17 @@ function About() {
 
   useEffect(() => {
     if (user) {
+      // If user doesn't have id, refresh from API
+      if (!user.id) {
+        if (refreshUser) {
+          refreshUser().then(() => {
+            // After refresh, user context will update and this effect will run again
+          });
+        }
+        setLoading(false);
+        return;
+      }
+      
       if (activeTab === 'my-apartments') {
         fetchUserPosts();
       } else {
@@ -28,15 +39,51 @@ function About() {
     }
   }, [user, activeTab]);
 
-  const fetchUserPosts = () => {
+  const fetchUserPosts = (providedUserId = null) => {
+    if (!user && !providedUserId) {
+      console.error('User is not available');
+      setLoading(false);
+      return;
+    }
+    
+    // Get user ID - handle both direct id and nested structure
+    const userId = providedUserId || user?.id || user?.userDTO?.id || user?.user?.id;
+    
+    if (!userId) {
+      console.error('User ID is not available. User object:', user);
+      // Try to get user from API
+      AxiosClient.get('/user')
+        .then((response) => {
+          const apiUser = response.data;
+          if (apiUser?.id) {
+            fetchUserPosts(apiUser.id);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+      return;
+    }
+    
     setLoading(true);
-    AxiosClient.get(`/user-posts/${user.id}`)
+    console.log('Fetching posts for user ID:', userId);
+    console.log('User object:', user);
+    AxiosClient.get(`/user-posts/${userId}`)
       .then((response) => {
-        setUserPosts(response.data || []);
+        console.log('Full response:', response);
+        console.log('Response data:', response.data);
+        // PostResource::collection returns { data: [...] }
+        const posts = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+        console.log('Parsed posts:', posts);
+        console.log('Posts count:', posts.length);
+        setUserPosts(posts);
         setLoading(false);
       })
       .catch((error) => {
         console.error('Error fetching user posts:', error);
+        console.error('Error response:', error.response);
         setLoading(false);
       });
   };
@@ -131,12 +178,8 @@ function About() {
             </div>
 
             {loading ? (
-              <div className={`text-3xl text-green-600 font-bold text-center py-12 ${
-                language === 'ar' 
-                  ? 'left-1/2 -translate-x-1/2' 
-                  : 'right-1/2 translate-x-1/2'
-              }`}>
-                {t('common.loading')}
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
               </div>
             ) : activeTab === 'my-apartments' ? (
               userPosts.length === 0 ? (

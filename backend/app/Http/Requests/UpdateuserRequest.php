@@ -26,12 +26,14 @@ class UpdateuserRequest extends FormRequest
             "name" => "required|string|max:55",
             "email" => "required|string|email|unique:users,email,".$this->id,
             "password" => [
+                "nullable",
                 "confirmed",
                 Password::min(8)
                 ->letters()
                 ->symbols()
             ],
-            "avatar" => "string",
+            "password_confirmation" => "nullable",
+            "avatar" => "nullable|string",
         ];
     }
 }

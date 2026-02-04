@@ -63,8 +63,22 @@ class postController extends Controller
         if($request->has("bedroom") && !empty($request->bedroom))
             $query->where("Bedrooms","=",$request->bedroom);
 
-        $posts = $query->with('durationPrices')->get();
-        return PostResource::collection($posts);
+        // Paginate results - 10 posts per page
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+        
+        $posts = $query->with(['postimage', 'durationPrices'])->paginate($perPage);
+        
+        return PostResource::collection($posts)->additional([
+            'pagination' => [
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+                'from' => $posts->firstItem(),
+                'to' => $posts->lastItem(),
+            ]
+        ]);
     }
 
     /**
@@ -197,7 +211,9 @@ class postController extends Controller
      */
     public function show(post $post)
     {
-        $post = Post::where("id","=",$post->id)->with('durationPrices')->firstOrFail();
+        $post = Post::where("id","=",$post->id)
+            ->with(['postimage', 'porperty', 'durationPrices', 'user'])
+            ->firstOrFail();
         return response()->json(new PostDetailsResource($post),200);
     }
 

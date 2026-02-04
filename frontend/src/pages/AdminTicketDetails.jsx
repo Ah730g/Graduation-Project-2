@@ -154,10 +154,8 @@ function AdminTicketDetails() {
 
   if (loading) {
     return (
-      <div className={`px-5 mx-auto max-w-[1366px] py-8 text-center ${
-        language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
-      }`}>
-        <p className="text-3xl text-green-600 font-bold">{t('common.loading')}</p>
+      <div className="px-5 mx-auto max-w-[1366px] py-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
       </div>
     );
   }

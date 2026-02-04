@@ -224,12 +224,8 @@ function AdminSupportTickets() {
       </div>
 
       {loading ? (
-        <div className={`text-3xl text-green-600 font-bold text-center py-12 ${
-          language === 'ar' 
-            ? 'left-1/2 -translate-x-1/2' 
-            : 'right-1/2 translate-x-1/2'
-        }`}>
-          {t('common.loading')}
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
         </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-12">

@@ -28,7 +28,9 @@ class PostResource extends JsonResource
             "longitude" => $this->Longitude,
             "type" => $this->Type,
             "porperty_id" => $this->porperty_id,
-            "property" => new PropertyResource($this->porperty),
+            "property" => $this->whenLoaded('porperty', function() {
+                return $this->porperty ? new PropertyResource($this->porperty) : null;
+            }),
             "utilities_policy" => $this->Utilities_Policy,
             "pet_policy" => $this->Pet_Policy,
             "income_policy" => $this->Income_Policy,
@@ -37,7 +39,19 @@ class PostResource extends JsonResource
             "resturant" => $this->Resturant,
             "school" => $this->School,
             "status" => $this->status,
-            "images" => $this->postimage,
+            "images" => $this->whenLoaded('postimage', function() {
+                return $this->postimage ? $this->postimage->map(function($img) {
+                    return [
+                        'id' => $img->id,
+                        'Image_URL' => $img->Image_URL,
+                    ];
+                }) : [];
+            }) ?? ($this->relationLoaded('postimage') && $this->postimage ? $this->postimage->map(function($img) {
+                return [
+                    'id' => $img->id,
+                    'Image_URL' => $img->Image_URL,
+                ];
+            }) : []),
             "duration_prices" => $this->whenLoaded('durationPrices', function() {
                 return $this->durationPrices->map(function($dp) {
                     return [
@@ -45,7 +59,7 @@ class PostResource extends JsonResource
                         'price' => $dp->price,
                     ];
                 });
-            })
+            }) ?? []
         ];
     }
 }

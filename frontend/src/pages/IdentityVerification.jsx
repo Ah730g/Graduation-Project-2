@@ -12,6 +12,8 @@ function IdentityVerification() {
   const [loading, setLoading] = useState(true);
   const [verification, setVerification] = useState(null);
   const [identityStatus, setIdentityStatus] = useState(null);
+  const [frontUploading, setFrontUploading] = useState(false);
+  const [backUploading, setBackUploading] = useState(false);
   const [formData, setFormData] = useState({
     document_type: 'id_card',
     document_front_url: null,
@@ -50,24 +52,29 @@ function IdentityVerification() {
   }, [navigate, user]);
 
   const handleFileURLChange = (field, url) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [field]: url,
-    });
+    }));
     setErrors(null);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
     setErrors(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (frontUploading || backUploading) {
+      setErrors('Please wait for documents to finish uploading.');
+      return;
+    }
     setLoading(true);
     setErrors(null);
     setSuccess(false);
@@ -200,7 +207,7 @@ function IdentityVerification() {
 
       {loading ? (
         <div className="text-center py-8">
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
         </div>
       ) : (identityStatus === 'none' || identityStatus === 'rejected' || (!identityStatus && !user?.identity_status)) && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-md shadow-md">
@@ -231,7 +238,9 @@ function IdentityVerification() {
             <select
               id="document_type"
               value={formData.document_type}
-              onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, document_type: e.target.value }))
+              }
               className="border border-gray-300 outline-none py-3 px-4 rounded-md w-full"
               required
             >
@@ -246,12 +255,16 @@ function IdentityVerification() {
             </label>
             <SingleFileUpload
               setFileURL={(url) => handleFileURLChange('document_front_url', url)}
+              onUploadingChange={setFrontUploading}
               accept="image/*,.pdf"
               label="Choose Front Document"
               folder="/identity_verifications"
             />
             {formData.document_front_url && (
               <p className="text-sm text-green-600 mt-2">✓ Front document uploaded successfully</p>
+            )}
+            {frontUploading && (
+              <p className="text-sm text-blue-600 mt-2">Uploading front document...</p>
             )}
             <p className="text-sm text-gray-500 mt-1">Accepted formats: JPG, PNG, PDF (Max 5MB)</p>
           </div>
@@ -262,12 +275,16 @@ function IdentityVerification() {
             </label>
             <SingleFileUpload
               setFileURL={(url) => handleFileURLChange('document_back_url', url)}
+              onUploadingChange={setBackUploading}
               accept="image/*,.pdf"
               label="Choose Back Document"
               folder="/identity_verifications"
             />
             {formData.document_back_url && (
               <p className="text-sm text-green-600 mt-2">✓ Back document uploaded successfully</p>
+            )}
+            {backUploading && (
+              <p className="text-sm text-blue-600 mt-2">Uploading back document...</p>
             )}
             <p className="text-sm text-gray-500 mt-1">Accepted formats: JPG, PNG, PDF (Max 5MB)</p>
           </div>
@@ -401,10 +418,22 @@ function IdentityVerification() {
 
           <button
             type="submit"
-            disabled={loading || !formData.document_front_url || !formData.full_name || !formData.document_number || !formData.date_of_birth}
+            disabled={
+              loading ||
+              frontUploading ||
+              backUploading ||
+              !formData.document_front_url ||
+              !formData.full_name ||
+              !formData.document_number ||
+              !formData.date_of_birth
+            }
             className="bg-yellow-300 hover:bg-yellow-400 text-[#444] font-semibold py-3 px-6 rounded-md transition duration-300 ease disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            {loading ? 'Submitting...' : 'Submit Verification / إرسال التحقق'}
+            {frontUploading || backUploading
+              ? 'Uploading documents...'
+              : loading
+                ? 'Submitting...'
+                : 'Submit Verification / إرسال التحقق'}
           </button>
         </form>
       )}

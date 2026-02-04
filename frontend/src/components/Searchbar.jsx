@@ -8,7 +8,7 @@ function Searchbar() {
   const [type, setType] = useState('rent');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setPosts } = usePostContext();
+  const { setPosts, setPagination } = usePostContext();
   const { t } = useLanguage();
 
   const onsubmit = (e) => {
@@ -20,14 +20,22 @@ function Searchbar() {
       min: filters.min,
       max: filters.max,
       location: filters.location,
+      page: 1,
+      per_page: 10,
     };
     console.log(payload);
     setLoading(true);
     AxiosClient.get('/post', { params: payload }).then((response) => {
-      setLoading(true);
-      setPosts(response.data.data);
+      setPosts(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination(response.data.pagination);
+      }
+      setLoading(false);
       console.log(response.data.data);
-      navigate('/list');
+      navigate('/list?page=1');
+    }).catch((error) => {
+      console.error('Search error:', error);
+      setLoading(false);
     });
   };
 

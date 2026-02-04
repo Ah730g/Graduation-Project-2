@@ -93,6 +93,13 @@ const translations = {
       shared: 'Shared',
       allowed: 'allowed',
       notAllowed: 'not allowed',
+      geolocationNotSupported: 'Geolocation is not supported by your browser',
+      locationRetrieved: 'Location retrieved successfully',
+      locationError: 'Error getting your location',
+      locationPermissionDenied: 'Location access denied. Please enable location permissions in your browser settings.',
+      locationUnavailable: 'Location information is unavailable.',
+      locationTimeout: 'The request to get your location timed out.',
+      gettingLocation: 'Getting Location...',
     },
     // Apartments Management
     apartments: {
@@ -796,6 +803,13 @@ const translations = {
       shared: 'مشترك',
       allowed: 'مسموح',
       notAllowed: 'غير مسموح',
+      geolocationNotSupported: 'الموقع الجغرافي غير مدعوم في متصفحك',
+      locationRetrieved: 'تم استرجاع الموقع بنجاح',
+      locationError: 'خطأ في الحصول على موقعك',
+      locationPermissionDenied: 'تم رفض الوصول إلى الموقع. يرجى تمكين أذونات الموقع في إعدادات المتصفح.',
+      locationUnavailable: 'معلومات الموقع غير متاحة.',
+      locationTimeout: 'انتهت مهلة طلب الحصول على موقعك.',
+      gettingLocation: 'جاري الحصول على الموقع...',
     },
     // Apartments Management
     apartments: {

@@ -31,10 +31,20 @@ function Signup() {
         setLoading(false);
       })
       .catch((error) => {
-        const response = error.response;
         setLoading(false);
-        if (response.status == 422) {
-          setErrors(response.data.errors);
+        if (error.response) {
+          // Server responded with an error
+          if (error.response.status === 422) {
+            setErrors(error.response.data.errors);
+          } else {
+            setErrors({ general: [error.response.data.message || 'An error occurred. Please try again.'] });
+          }
+        } else if (error.request) {
+          // Request was made but no response received (connection error)
+          setErrors({ general: ['Unable to connect to server. Please make sure the backend server is running.'] });
+        } else {
+          // Something else happened
+          setErrors({ general: ['An unexpected error occurred. Please try again.'] });
         }
       });
   };

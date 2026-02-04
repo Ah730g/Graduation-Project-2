@@ -1,9 +1,11 @@
 import React from 'react';
 import AxiosClient from '../AxiosClient';
 import { usePostContext } from '../contexts/PostContext';
+import { useSearchParams } from 'react-router-dom';
 
-function Filter({ properties, loading }) {
-  const { setPosts } = usePostContext();
+function Filter({ properties, loading, onFilterChange }) {
+  const { setPosts, setPagination } = usePostContext();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -16,12 +18,30 @@ function Filter({ properties, loading }) {
       location: data.location,
       bedroom: data.bedroom,
       property: data.property,
+      page: 1, // Reset to first page when filtering
+      per_page: 10,
     };
+    
+    // Update URL params
+    const newParams = new URLSearchParams();
+    if (payload.location) newParams.set('location', payload.location);
+    if (payload.type) newParams.set('type', payload.type);
+    if (payload.min) newParams.set('min', payload.min);
+    if (payload.max) newParams.set('max', payload.max);
+    if (payload.bedroom) newParams.set('bedroom', payload.bedroom);
+    if (payload.property) newParams.set('property', payload.property);
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+    
     loading(true);
     AxiosClient.get('/post', { params: payload })
       .then((response) => {
-        setPosts(response.data.data);
+        setPosts(response.data.data || []);
+        if (response.data.pagination) {
+          setPagination(response.data.pagination);
+        }
         loading(false);
+        if (onFilterChange) onFilterChange();
       })
       .catch((error) => {
         console.log(error);

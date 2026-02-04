@@ -6,6 +6,7 @@ use App\Models\RentalRequest;
 use App\Models\Post;
 use App\Models\Notification;
 use App\Services\RentalDurationService;
+use App\Http\Resources\PostResource;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -191,7 +192,7 @@ class BookingController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $requests = RentalRequest::with(['post.postimage', 'post.user', 'contract' => function($query) {
+        $requests = RentalRequest::with(['post.postimage', 'post.porperty', 'post.durationPrices', 'post.user', 'contract' => function($query) {
                 $query->where('status', '!=', 'draft')
                       ->select('id', 'rental_request_id', 'payment_confirmed_by_owner', 'status', 'cancelled_by_admin');
             }])
@@ -203,7 +204,16 @@ class BookingController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($requests);
+        // Transform the response to include PostResource for post data
+        $transformed = $requests->map(function($rentalRequest) use ($request) {
+            $requestData = $rentalRequest->toArray();
+            if ($rentalRequest->post) {
+                $requestData['post'] = (new PostResource($rentalRequest->post))->toArray($request);
+            }
+            return $requestData;
+        });
+
+        return response()->json($transformed);
     }
 
     /**
@@ -217,7 +227,7 @@ class BookingController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $requests = RentalRequest::with(['user', 'post.postimage', 'contract' => function($query) {
+        $requests = RentalRequest::with(['user', 'post.postimage', 'post.porperty', 'post.durationPrices', 'contract' => function($query) {
                 $query->where('status', '!=', 'draft')
                       ->select('id', 'rental_request_id', 'payment_confirmed_by_owner', 'status', 'cancelled_by_admin');
             }])
@@ -231,7 +241,16 @@ class BookingController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($requests);
+        // Transform the response to include PostResource for post data
+        $transformed = $requests->map(function($rentalRequest) use ($request) {
+            $requestData = $rentalRequest->toArray();
+            if ($rentalRequest->post) {
+                $requestData['post'] = (new PostResource($rentalRequest->post))->toArray($request);
+            }
+            return $requestData;
+        });
+
+        return response()->json($transformed);
     }
 
     /**

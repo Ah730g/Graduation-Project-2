@@ -173,22 +173,22 @@ class DatabaseSeeder extends Seeder
         // Create Post Images (local placeholders)
         PostImage::create([
             'post_id' => $post1->id,
-            'image_url' => '/bg.png',
+            'Image_URL' => '/bg.png',
         ]);
 
         PostImage::create([
             'post_id' => $post2->id,
-            'image_url' => '/bg.png',
+            'Image_URL' => '/bg.png',
         ]);
 
         PostImage::create([
             'post_id' => $post3->id,
-            'image_url' => '/bg.png',
+            'Image_URL' => '/bg.png',
         ]);
 
         PostImage::create([
             'post_id' => $post4->id,
-            'image_url' => '/bg.png',
+            'Image_URL' => '/bg.png',
         ]);
 
         // Create Rental Requests

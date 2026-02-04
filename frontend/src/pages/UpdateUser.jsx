@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserContext } from '../contexts/UserContext';
 import { Link, useNavigate } from 'react-router-dom';
 import AxiosClient from '../AxiosClient';
@@ -6,11 +6,34 @@ import UploadWidget from '../components/UploadWidget';
 
 function UpdateUser() {
   const { user, setUser, setMessage } = useUserContext();
-  const [updatedUser, setUpdatedUser] = useState(user);
+  const [updatedUser, setUpdatedUser] = useState({
+    id: user?.id || null,
+    name: user?.name || '',
+    email: user?.email || '',
+    avatar: user?.avatar || null,
+    password: '',
+    password_confirmation: '',
+  });
   const [errors, setErrors] = useState(null);
   const [loading, setLoading] = useState(false);
-  const setAvatarURL = (URL) => {
-    if (URL) setUpdatedUser({ ...updatedUser, avatar: URL[0] });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Update form when user data loads or changes
+  useEffect(() => {
+    if (user) {
+      setUpdatedUser(prev => ({
+        ...prev,
+        id: user.id,
+        name: user.name || '',
+        email: user.email || '',
+        avatar: user.avatar || prev.avatar,
+      }));
+    }
+  }, [user]);
+
+  const handleAvatarChange = (urls) => {
+    const next = Array.isArray(urls) ? urls[0] : null;
+    setUpdatedUser({ ...updatedUser, avatar: next || null });
   };
   const navigate = useNavigate();
 
@@ -18,7 +41,22 @@ function UpdateUser() {
     en.preventDefault();
     setErrors(null);
     setLoading(true);
-    AxiosClient.put('/users/' + updatedUser.id, updatedUser)
+    
+    // Prepare payload - only include password fields if they're not empty
+    const payload = {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      avatar: updatedUser.avatar,
+    };
+    
+    // Only include password fields if user provided a new password
+    if (updatedUser.password && updatedUser.password.trim() !== '') {
+      payload.password = updatedUser.password;
+      payload.password_confirmation = updatedUser.password_confirmation;
+    }
+    
+    AxiosClient.put('/users/' + updatedUser.id, payload)
       .then((response) => {
         setUser(response.data);
         setLoading(false);
@@ -54,7 +92,7 @@ function UpdateUser() {
               type="text"
               placeholder="Full Name"
               className="w-full px-3 py-5 border outline-none rounded-md"
-              defaultValue={updatedUser.name}
+              value={updatedUser.name || ''}
               onChange={(e) => {
                 return setUpdatedUser({
                   ...updatedUser,
@@ -66,7 +104,7 @@ function UpdateUser() {
               type="email"
               placeholder="Email"
               className="w-full px-3 py-5 border outline-none rounded-md"
-              defaultValue={updatedUser.email}
+              value={updatedUser.email || ''}
               onChange={(e) => {
                 return setUpdatedUser({
                   ...updatedUser,
@@ -98,9 +136,9 @@ function UpdateUser() {
             />
             <button
               className="w-full bg-green-600 text-white px-3 py-5 rounded-md disabled:bg-[#444] disabled:cursor-none"
-              disabled={loading}
+              disabled={loading || avatarUploading}
             >
-              Update
+              {avatarUploading ? "Uploading..." : "Update"}
             </button>
           </form>
         </div>
@@ -109,7 +147,14 @@ function UpdateUser() {
         className="right flex-1 md:bg-[#fcf5f3] px-5 overflow-hidden 
       flex justify-center items-center"
       >
-        <UploadWidget setAvatarURL={setAvatarURL} isMultiple={false} />
+        <UploadWidget
+          value={updatedUser?.avatar ? [updatedUser.avatar] : []}
+          onChange={handleAvatarChange}
+          onUploadingChange={setAvatarUploading}
+          isMultiple={false}
+          folder="/avatars"
+          label="Change photo"
+        />
       </div>
     </div>
   );

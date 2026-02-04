@@ -181,7 +181,7 @@ class AdminController extends Controller
     public function getPosts(Request $request)
     {
         $perPage = $request->get('per_page', 15);
-        $posts = Post::with(['user:id,name,email', 'porperty'])
+        $posts = Post::with(['user:id,name,email', 'porperty', 'postimage'])
             ->select('id', 'user_id', 'Title', 'Address', 'Price', 'status', 'created_at')
             ->paginate($perPage);
 

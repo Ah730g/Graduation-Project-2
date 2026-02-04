@@ -13,7 +13,10 @@ function AddPost() {
   const { user, refreshUser } = useUserContext();
   const [lat, setLat] = useState("");
   const [len, setLen] = useState("");
-  const [avatarURL, setAvatarURL] = useState(null);
+  const [avatarURL, setAvatarURL] = useState([]);
+  const [imagesUploading, setImagesUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitKind, setSubmitKind] = useState(null); // 'create' | 'update' | 'draft_create' | 'draft_update'
   const [isEditing, setIsEditing] = useState(false);
   const [postId, setPostId] = useState(null);
   const [postData, setPostData] = useState(null);
@@ -22,6 +25,7 @@ function AddPost() {
   const { t, language } = useLanguage();
   const { showToast } = usePopup();
   const [durationPrices, setDurationPrices] = useState([]);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     // Check if editing
@@ -111,6 +115,40 @@ function AddPost() {
     };
   };
 
+  // Map backend field names to frontend input names
+  const getFieldError = (fieldName) => {
+    if (!errors) return null;
+    
+    // Map frontend field names to backend field names
+    const fieldMap = {
+      'title': 'title',
+      'price': 'price',
+      'address': 'address',
+      'des': 'description',
+      'city': 'city',
+      'bed-num': 'bedrooms',
+      'bath-num': 'bathrooms',
+      'lat': 'latitude',
+      'len': 'longitude',
+      'type': 'type',
+      'prop': 'porperty_id',
+      'utl-policy': 'utilities_policy',
+      'pet-policy': 'pet_policy',
+      'income-policy': 'income_policy',
+      'total-size': 'total_size',
+      'bus': 'bus',
+      'resturant': 'resturant',
+      'school': 'school',
+    };
+    
+    const backendFieldName = fieldMap[fieldName];
+    if (backendFieldName && errors[backendFieldName]) {
+      return errors[backendFieldName][0];
+    }
+    
+    return null;
+  };
+
   const countFilledFields = (payload) => {
     let count = 0;
     const fieldsToCheck = [
@@ -136,6 +174,20 @@ function AddPost() {
 
   const onSubmit = (e, isDraft = false) => {
     e.preventDefault();
+
+    if (submitting) return;
+
+    if (imagesUploading) {
+      showToast("Please wait for images to finish uploading", "warning");
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitKind(
+      isEditing
+        ? (isDraft ? "draft_update" : "update")
+        : (isDraft ? "draft_create" : "create")
+    );
     
     // Get form element - could be from form submit or button click
     const form = e.target.tagName === 'FORM' ? e.target : e.currentTarget.closest('form') || e.currentTarget.form;
@@ -144,6 +196,8 @@ function AddPost() {
       setErrors({
         general: ['Form not found']
       });
+      setSubmitting(false);
+      setSubmitKind(null);
       return;
     }
     
@@ -162,6 +216,8 @@ function AddPost() {
         setErrors({
           general: [t('apartments.minFieldsRequired') || 'Please fill at least 4 fields to save as draft']
         });
+        setSubmitting(false);
+        setSubmitKind(null);
         return;
       }
     }
@@ -203,19 +259,84 @@ function AddPost() {
             general: [error.response?.data?.message || "Failed to create post"],
           }
         );
+      })
+      .finally(() => {
+        setSubmitting(false);
+        setSubmitKind(null);
       });
   };
   const handleLocation = () => {
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+      const msg = t("addPost.geolocationNotSupported");
+      showToast(
+        msg && msg !== "addPost.geolocationNotSupported" 
+          ? msg 
+          : "Geolocation is not supported by your browser", 
+        "error"
+      );
+      return;
+    }
+
+    setGettingLocation(true);
+
+    // Get current position with options for better accuracy
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLat(position.coords.latitude);
-        setLen(position.coords.longitude);
-
-        // console.log('Latitude:', latitude);
-        // console.log('Longitude:', longitude);
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        
+        // Convert to string and set with proper precision (6 decimal places for accuracy)
+        setLat(latitude.toFixed(6));
+        setLen(longitude.toFixed(6));
+        
+        setGettingLocation(false);
+        const successMsg = t("addPost.locationRetrieved");
+        showToast(
+          successMsg && successMsg !== "addPost.locationRetrieved"
+            ? successMsg
+            : `Location retrieved: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          "success"
+        );
       },
       (error) => {
-        console.error("Error getting location:", error.message);
+        setGettingLocation(false);
+        let errorMessage = "Error getting your location";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            const deniedMsg = t("addPost.locationPermissionDenied");
+            errorMessage = deniedMsg && deniedMsg !== "addPost.locationPermissionDenied"
+              ? deniedMsg
+              : "Location access denied. Please enable location permissions in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            const unavailableMsg = t("addPost.locationUnavailable");
+            errorMessage = unavailableMsg && unavailableMsg !== "addPost.locationUnavailable"
+              ? unavailableMsg
+              : "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            const timeoutMsg = t("addPost.locationTimeout");
+            errorMessage = timeoutMsg && timeoutMsg !== "addPost.locationTimeout"
+              ? timeoutMsg
+              : "The request to get your location timed out.";
+            break;
+          default:
+            const errorMsg = t("addPost.locationError");
+            errorMessage = errorMsg && errorMsg !== "addPost.locationError"
+              ? errorMsg
+              : "An unknown error occurred while getting your location.";
+            break;
+        }
+        
+        console.error("Error getting location:", error);
+        showToast(errorMessage, "error");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   };
@@ -229,20 +350,16 @@ function AddPost() {
         language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
       }`}>
         <h2 className="font-bold text-3xl">{t("addPost.title")}</h2>
-        {errors && (
+        {errors && errors.general && (
           <div className="bg-red-500 text-white p-3 rounded-md">
-            {Object.keys(errors).map((e, i) => {
-              return <p key={i}>{errors[e][0]}</p>;
+            {errors.general.map((error, i) => {
+              return <p key={i}>{error}</p>;
             })}
           </div>
         )}
         {loading ? (
-          <div className={`absolute top-1/2 font-bold text-3xl text-green-600 ${
-            language === 'ar' 
-              ? 'left-1/2 -translate-x-1/2' 
-              : 'right-1/2 translate-x-1/2'
-          }`}>
-            {t("common.loading")}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
           </div>
         ) : (
           <form
@@ -258,8 +375,11 @@ function AddPost() {
                 name="title"
                 id="title"
                 defaultValue={postData?.Title || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('title') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('title') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('title')}</span>
+              )}
             </div>
             <div className="price-item flex flex-col">
               <label htmlFor="price" className="font-semibold text-sm">
@@ -270,8 +390,11 @@ function AddPost() {
                 name="price"
                 id="price"
                 defaultValue={postData?.Price || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('price') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('price') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('price')}</span>
+              )}
             </div>
             <div className="address-item flex flex-col">
               <label htmlFor="address" className="font-semibold text-sm">
@@ -282,8 +405,11 @@ function AddPost() {
                 name="address"
                 id="address"
                 defaultValue={postData?.Address || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('address') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('address') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('address')}</span>
+              )}
             </div>
             <div className="des-item flex flex-col w-full outline-none">
               <label htmlFor="des" className="font-semibold text-sm">
@@ -293,8 +419,11 @@ function AddPost() {
                 name="des"
                 id="des"
                 defaultValue={postData?.Description || ""}
-                className="h-[200px] w-full border border-black rounded-md resize-none py-5 px-3 outline-none"
+                className={`h-[200px] w-full border rounded-md resize-none py-5 px-3 outline-none ${getFieldError('des') ? 'border-red-500' : 'border-black'}`}
               ></textarea>
+              {getFieldError('des') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('des')}</span>
+              )}
             </div>
             <div className="city-item flex flex-col">
               <label htmlFor="city" className="font-semibold text-sm">
@@ -305,8 +434,11 @@ function AddPost() {
                 name="city"
                 id="city"
                 defaultValue={postData?.City || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('city') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('city') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('city')}</span>
+              )}
             </div>
             <div className="bed-item flex flex-col">
               <label htmlFor="bed-num" className="font-semibold text-sm">
@@ -317,8 +449,11 @@ function AddPost() {
                 name="bed-num"
                 id="bed-num"
                 defaultValue={postData?.Bedrooms || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bed-num') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('bed-num') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('bed-num')}</span>
+              )}
             </div>
             <div className="bath-item flex flex-col">
               <label htmlFor="bath-num" className="font-semibold text-sm">
@@ -329,8 +464,11 @@ function AddPost() {
                 name="bath-num"
                 id="bath-num"
                 defaultValue={postData?.Bathrooms || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bath-num') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('bath-num') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('bath-num')}</span>
+              )}
             </div>
             <div className="lat-item flex flex-col">
               <label htmlFor="lat" className="font-semibold text-sm">
@@ -344,8 +482,11 @@ function AddPost() {
                 onChange={(e) => {
                   setLat(e.currentTarget.value);
                 }}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('lat') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('lat') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('lat')}</span>
+              )}
             </div>
             <div className="len-item flex flex-col">
               <label htmlFor="len" className="font-semibold text-sm">
@@ -359,8 +500,11 @@ function AddPost() {
                 onChange={(e) => {
                   setLen(e.currentTarget.value);
                 }}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('len') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('len') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('len')}</span>
+              )}
             </div>
             <div className="type-item flex flex-col">
               <label htmlFor="type" className="font-semibold text-sm">
@@ -371,11 +515,14 @@ function AddPost() {
                 name="type"
                 id="type"
                 defaultValue={postData?.type || postData?.Type || "rent"}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('type') ? 'border-red-500' : 'border-black'}`}
               >
                 <option value="rent">{t("search.rent")}</option>
                 <option value="buy">{t("search.buy")}</option>
               </select>
+              {getFieldError('type') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('type')}</span>
+              )}
             </div>
             <div className="property-item flex flex-col">
               <label htmlFor="prop" className="font-semibold text-sm">
@@ -386,7 +533,7 @@ function AddPost() {
                 name="prop"
                 id="prop"
                 defaultValue={postData?.porperty_id || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('prop') ? 'border-red-500' : 'border-black'}`}
               >
                 {properties && properties.map((e) => {
                   return (
@@ -396,6 +543,9 @@ function AddPost() {
                   );
                 })}
               </select>
+              {getFieldError('prop') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('prop')}</span>
+              )}
             </div>
             <div className="utilities-item flex flex-col">
               <label htmlFor="utl-policy" className="font-semibold text-sm">
@@ -406,12 +556,15 @@ function AddPost() {
                 name="utl-policy"
                 id="utl-policy"
                 defaultValue={postData?.utilities_policy || postData?.Utilities_Policy || "owner"}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('utl-policy') ? 'border-red-500' : 'border-black'}`}
               >
                 <option value="owner">{t("addPost.ownerResponsible")}</option>
                 <option value="tenant">{t("addPost.tenantResponsible")}</option>
                 <option value="share">{t("addPost.shared")}</option>
               </select>
+              {getFieldError('utl-policy') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('utl-policy')}</span>
+              )}
             </div>
             <div className="pet-item flex flex-col">
               <label htmlFor="pet-policy" className="font-semibold text-sm">
@@ -422,11 +575,14 @@ function AddPost() {
                 name="pet-policy"
                 id="pet-policy"
                 defaultValue={postData?.pet_policy !== undefined ? String(postData.pet_policy) : (postData?.Pet_Policy !== undefined ? String(postData.Pet_Policy) : "false")}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('pet-policy') ? 'border-red-500' : 'border-black'}`}
               >
                 <option value="true">{t("addPost.allowed")}</option>
                 <option value="false">{t("addPost.notAllowed")}</option>
               </select>
+              {getFieldError('pet-policy') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('pet-policy')}</span>
+              )}
             </div>
             <div className="income-item flex flex-col">
               <label htmlFor="income-policy" className="font-semibold text-sm">
@@ -437,8 +593,11 @@ function AddPost() {
                 name="income-policy"
                 id="income-policy"
                 defaultValue={postData?.income_policy || postData?.Income_Policy || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('income-policy') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('income-policy') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('income-policy')}</span>
+              )}
             </div>
             <div className="total-size-item flex flex-col">
               <label htmlFor="total-size" className="font-semibold text-sm">
@@ -449,8 +608,11 @@ function AddPost() {
                 name="total-size"
                 id="total-size"
                 defaultValue={postData?.total_size || postData?.Total_Size || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('total-size') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('total-size') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('total-size')}</span>
+              )}
             </div>
             <div className="school-item flex flex-col">
               <label htmlFor="school" className="font-semibold text-sm">
@@ -461,8 +623,11 @@ function AddPost() {
                 name="school"
                 id="school"
                 defaultValue={postData?.school || postData?.School || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('school') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('school') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('school')}</span>
+              )}
             </div>
             <div className="resturant-item flex flex-col">
               <label htmlFor="resturant" className="font-semibold text-sm">
@@ -473,8 +638,11 @@ function AddPost() {
                 name="resturant"
                 id="resturant"
                 defaultValue={postData?.resturant || postData?.Resturant || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('resturant') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('resturant') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('resturant')}</span>
+              )}
             </div>
             <div className="bus-item flex flex-col">
               <label htmlFor="bus" className="font-semibold text-sm">
@@ -485,8 +653,11 @@ function AddPost() {
                 name="bus"
                 id="bus"
                 defaultValue={postData?.bus || postData?.Bus || ""}
-                className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bus') ? 'border-red-500' : 'border-black'}`}
               />
+              {getFieldError('bus') && (
+                <span className="text-red-500 text-xs mt-1">{getFieldError('bus')}</span>
+              )}
             </div>
             
             {/* Duration Pricing Section */}
@@ -546,29 +717,79 @@ function AddPost() {
             
             <button 
               type="submit"
-              className="bg-green-600 h-[86px] text-white font-semibold rounded-md w-[230px] hover:bg-green-800 transition"
+              disabled={imagesUploading || submitting}
+              className="bg-green-600 h-[86px] text-white font-semibold rounded-md w-[230px] hover:bg-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("addPost.create")}
+              <span className="flex items-center justify-center gap-2">
+                {(submitting && (submitKind === "create" || submitKind === "update")) ? (
+                  <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></span>
+                ) : null}
+                {imagesUploading
+                  ? "Uploading photos..."
+                  : submitting
+                    ? (isEditing ? (t("addPost.updating") && t("addPost.updating") !== "addPost.updating" ? t("addPost.updating") : "Updating...") : (t("addPost.creating") && t("addPost.creating") !== "addPost.creating" ? t("addPost.creating") : "Creating..."))
+                    : t("addPost.create")}
+              </span>
             </button>
             <button
               type="button"
               onClick={(e) => onSubmit(e, true)}
-              className="bg-yellow-300 h-[86px] text-[#444] font-semibold rounded-md w-[230px] hover:bg-yellow-400 transition"
+              disabled={imagesUploading || submitting}
+              className="bg-yellow-300 h-[86px] text-[#444] font-semibold rounded-md w-[230px] hover:bg-yellow-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("addPost.saveAsDraft")}
+              <span className="flex items-center justify-center gap-2">
+                {(submitting && (submitKind === "draft_create" || submitKind === "draft_update")) ? (
+                  <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#444]"></span>
+                ) : null}
+                {imagesUploading
+                  ? "Uploading photos..."
+                  : submitting
+                    ? (t("addPost.savingDraft") && t("addPost.savingDraft") !== "addPost.savingDraft" ? t("addPost.savingDraft") : "Saving draft...")
+                    : t("addPost.saveAsDraft")}
+              </span>
             </button>
-            <div
+            <button
+              type="button"
               className="bg-green-600 h-[86px] text-white font-semibold rounded-md 
-              w-[230px] flex justify-center items-center cursor-pointer transition hover:bg-green-800"
+              w-[230px] flex justify-center items-center cursor-pointer transition hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleLocation}
+              disabled={gettingLocation}
             >
-              {t("addPost.currentLocation")}
-            </div>
+              {gettingLocation ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  <span>
+                    {(() => {
+                      const msg = t("addPost.gettingLocation");
+                      return msg && msg !== "addPost.gettingLocation" ? msg : "Getting Location...";
+                    })()}
+                  </span>
+                </div>
+              ) : (
+                (() => {
+                  const msg = t("addPost.currentLocation");
+                  return msg && msg !== "addPost.currentLocation" ? msg : "Current Location";
+                })()
+              )}
+            </button>
           </form>
         )}
       </div>
-      <div className="right flex-1 md:bg-[#fcf5f3] overflow-y-scroll h-auto px-2 flex justify-center items-center">
-        <UploadWidget setAvatarURL={setAvatarURL} />
+      <div className="right flex-1 md:bg-[#fcf5f3] overflow-y-scroll h-auto px-2 flex flex-col justify-center items-center gap-3">
+        <div className="w-full">
+          <UploadWidget
+            value={avatarURL}
+            onChange={setAvatarURL}
+            onUploadingChange={setImagesUploading}
+            folder="/posts"
+            label={t("addPost.addPhotos") && t("addPost.addPhotos") !== "addPost.addPhotos" ? t("addPost.addPhotos") : "Add photos"}
+          />
+          {errors && errors.images && (
+            <div className="mt-2">
+              <span className="text-red-500 text-xs">{errors.images[0]}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

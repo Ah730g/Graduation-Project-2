@@ -87,32 +87,48 @@ function EstateCard({ estate, showSaveButton = true }) {
     if (Array.isArray(estate.images) && estate.images.length > 0) {
       const firstImg = estate.images[0];
       // Handle different possible structures
-      return firstImg?.Image_URL || firstImg?.image_url || firstImg?.url || firstImg || '/placeholder-image.png';
+      // PostResource now returns: { Image_URL: "...", id: 1 }
+      // But also handle legacy formats or Laravel serialization variations
+      let imageUrl = null;
+      
+      if (typeof firstImg === 'string') {
+        imageUrl = firstImg;
+      } else if (firstImg && typeof firstImg === 'object') {
+        // Try all possible field name variations
+        imageUrl = firstImg.Image_URL || firstImg.image_url || firstImg.url || firstImg.ImageUrl || firstImg.imageUrl;
+      }
+      
+      return imageUrl || '/placeholder-image.png';
     }
     
     return '/placeholder-image.png';
   };
   
   const firstImage = getFirstImage();
+  const postUrl = estate?.id ? `/${estate.id}` : '#';
   
   return (
-    <div className="flex gap-5 items-center justify-start">
-      <Link className="image w-2/5 h-48 max-md:hidden" to={`/${estate?.id || '#'}`}>
+    <Link 
+      to={postUrl}
+      className="flex gap-5 items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded-lg transition-all duration-200 -m-3 block"
+    >
+      <div className="image w-2/5 h-48 md:h-48 max-md:h-32 flex-shrink-0">
         <img
           src={firstImage}
           alt={estate?.Title || 'Apartment'}
           className="rounded-md w-full h-full object-cover bg-gray-200"
           onError={(e) => {
-            e.target.src = '/placeholder-image.png';
+            // Fallback to placeholder if image fails to load
+            if (e.target.src !== '/placeholder-image.png') {
+              e.target.src = '/placeholder-image.png';
+            }
           }}
         />
-      </Link>
+      </div>
       <div className="content flex justify-between flex-col gap-2 flex-1 h-full">
-        <Link to={`/${estate?.id || '#'}`}>
-          <h3 className="font-semibold text-lg text-[#444] dark:text-white transition duration-400 hover:text-black dark:hover:text-gray-300 hover:scale-105">
-            {estate?.Title || 'Untitled'}
-          </h3>
-        </Link>
+        <h3 className="font-semibold text-lg text-[#444] dark:text-white transition duration-400 hover:text-black dark:hover:text-gray-300">
+          {estate?.Title || 'Untitled'}
+        </h3>
         <p className="font-light flex items-center gap-1 text-sm text-[#888] dark:text-gray-400">
           <img src="/public/pin.png" alt="" className="w-4" />
           {estate?.Address || 'Address not specified'}
@@ -134,9 +150,13 @@ function EstateCard({ estate, showSaveButton = true }) {
             </span>
           </div>
           {showSaveButton && (
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-3 items-center" onClick={(e) => e.preventDefault()}>
               <button
-                onClick={handleSaveToggle}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSaveToggle(e);
+                }}
                 disabled={saving}
                 className={`border dark:border-gray-600 py-[5px] px-2 rounded-sm cursor-pointer transition ${
                   isSaved 
@@ -151,14 +171,17 @@ function EstateCard({ estate, showSaveButton = true }) {
                   className="w-4" 
                 />
               </button>
-              <div className="border dark:border-gray-600 py-[5px] px-2 rounded-sm cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600 transition">
+              <div 
+                className="border dark:border-gray-600 py-[5px] px-2 rounded-sm cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+                onClick={(e) => e.preventDefault()}
+              >
                 <img src="/public/chat.png" alt="" className="w-4" />
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

@@ -71,9 +71,15 @@ function EstateInfo() {
           setIsSaved(true);
         })
         .catch((error) => {
-          if (error.response.status == 403) {
+          if (error.response && error.response.status == 403) {
             setMessageStatus(false);
             setMessage(error.response.data.message);
+          } else if (error.response) {
+            setMessageStatus(false);
+            setMessage(error.response.data?.message || 'An error occurred. Please try again.');
+          } else {
+            setMessageStatus(false);
+            setMessage('Unable to connect to server. Please make sure the backend server is running.');
           }
         });
     }
@@ -144,12 +150,8 @@ function EstateInfo() {
      lg:flex lg:justify-between h-[calc(100vh-100px)] max-lg:overflow-y-scroll"
     >
       {loading ? (
-        <div className={`text-3xl text-green-600 font-bold absolute top-1/2 ${
-          language === 'ar' 
-            ? 'left-1/2 -translate-x-1/2' 
-            : 'right-1/2 translate-x-1/2'
-        }`}>
-          Loading...
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
         </div>
       ) : (
         <>
@@ -197,8 +199,8 @@ function EstateInfo() {
               {postDetails.post.Description}
             </p>
           </div>
-          <div className="flex-1 bg-[#fcf5f3] px-5 max-md:mb-5 max-md:py-5">
-            <div className="flex flex-col gap-4">
+          <div className="flex-1 bg-[#fcf5f3] px-5 max-md:mb-5 max-md:py-5 overflow-y-auto max-h-[calc(100vh-100px)]">
+            <div className="flex flex-col gap-4 pb-4">
               <h2 className="font-bold">General</h2>
               <div className="bg-white rounded-md px-3 py-2 flex flex-col gap-3">
                 <div className="flex gap-2 items-center">
@@ -322,8 +324,8 @@ function EstateInfo() {
                 
                 {/* Booking Modal */}
                 {showBookingModal && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
                       <h2 className="text-2xl font-bold text-[#444] mb-4">
                         {t('booking.selectDuration') || 'Select Rental Duration'}
                       </h2>

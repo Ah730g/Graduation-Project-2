@@ -173,7 +173,7 @@ function AdminReports() {
   if (loading && !report) {
     return (
       <div className="px-5 mx-auto max-w-[1366px] py-8 text-center">
-        <p className="text-[#888]">{t('common.loading')}</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
       </div>
     );
   }

@@ -11,7 +11,7 @@ function Navbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
-  const { user, isAdmin, setUser, setToken } = useUserContext();
+  const { user, token, isAdmin, setUser, setToken } = useUserContext();
   const { language, setLanguage, t } = useLanguage();
   const { darkMode, toggleDarkMode } = useDarkMode();
   const navigate = useNavigate();
@@ -33,25 +33,57 @@ function Navbar() {
 
   // Fetch unread notifications count
   useEffect(() => {
-    if (user) {
+    if (user && token) {
       fetchUnreadCount();
       // Poll for new notifications every 30 seconds
       const interval = setInterval(() => {
         fetchUnreadCount();
       }, 30000);
       return () => clearInterval(interval);
+    } else {
+      // Reset count when user is not logged in
+      setUnreadCount(0);
     }
-  }, [user]);
+  }, [user, token]);
 
   const fetchUnreadCount = () => {
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+    
     AxiosClient.get('/notifications/unread-count')
       .then((response) => {
         setUnreadCount(response.data.count || 0);
       })
       .catch((error) => {
-        console.error('Error fetching unread count:', error);
+        // Handle 401 (unauthorized) silently - token might be expired or invalid
+        // The AxiosClient interceptor will handle clearing the token
+        if (error.response && error.response.status === 401) {
+          setUnreadCount(0);
+          // Token will be cleared by AxiosClient interceptor
+          // Update local state to reflect logout
+          setToken(null);
+          setUser(null);
+        } else {
+          // Only log non-auth errors
+          console.error('Error fetching unread count:', error);
+          setUnreadCount(0);
+        }
       });
   };
+
+  // Listen for auth logout events from AxiosClient interceptor
+  useEffect(() => {
+    const handleLogout = () => {
+      setToken(null);
+      setUser(null);
+      setUnreadCount(0);
+    };
+    
+    window.addEventListener('auth:logout', handleLogout);
+    return () => window.removeEventListener('auth:logout', handleLogout);
+  }, [setToken, setUser]);
 
   const handleLogout = () => {
     AxiosClient.post('/logout')
