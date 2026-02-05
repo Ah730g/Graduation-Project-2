@@ -43,10 +43,29 @@ export default function UserContextProvider({ children }) {
       try {
         const response = await AxiosClient.get("/user");
         if (response.data) {
+          // Check if user account is disabled
+          if (response.data.status === 'disabled') {
+            setUser(null);
+            setToken(null);
+            setMessage('Your account has been disabled. Please contact support.', 'error');
+            // Redirect to login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+            return;
+          }
           setUser(response.data);
         }
       } catch (error) {
         console.error("Error refreshing user:", error);
+        // If error is 403 with disabled status, handle it
+        if (error.response?.status === 403 && error.response?.data?.status === 'disabled') {
+          setUser(null);
+          setToken(null);
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
       }
     }
   };

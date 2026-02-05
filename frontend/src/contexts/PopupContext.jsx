@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import ToastContainer from '../components/ToastContainer';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PromptModal from '../components/PromptModal';
 
 const PopupContext = createContext({
   showToast: () => {},
   showConfirm: () => {},
+  showPrompt: () => {},
 });
 
 export function PopupProvider({ children }) {
@@ -16,6 +18,19 @@ export function PopupProvider({ children }) {
     confirmText: 'Confirm',
     cancelText: 'Cancel',
     variant: 'danger',
+    onConfirm: null,
+    onCancel: null,
+  });
+
+  const [promptModal, setPromptModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    placeholder: '',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    required: false,
+    variant: 'warning',
     onConfirm: null,
     onCancel: null,
   });
@@ -56,9 +71,36 @@ export function PopupProvider({ children }) {
     []
   );
 
+  const showPrompt = useCallback(
+    ({ title, message, placeholder, confirmText, cancelText, required, variant }) => {
+      return new Promise((resolve) => {
+        setPromptModal({
+          isOpen: true,
+          title,
+          message,
+          placeholder: placeholder || '',
+          confirmText: confirmText || 'Confirm',
+          cancelText: cancelText || 'Cancel',
+          required: required !== undefined ? required : false,
+          variant: variant || 'warning',
+          onConfirm: (value) => {
+            setPromptModal((prev) => ({ ...prev, isOpen: false }));
+            resolve(value);
+          },
+          onCancel: () => {
+            setPromptModal((prev) => ({ ...prev, isOpen: false }));
+            resolve(null);
+          },
+        });
+      });
+    },
+    []
+  );
+
   const value = {
     showToast,
     showConfirm,
+    showPrompt,
   };
 
   return (
@@ -74,6 +116,18 @@ export function PopupProvider({ children }) {
         variant={confirmModal.variant}
         onConfirm={confirmModal.onConfirm}
         onCancel={confirmModal.onCancel}
+      />
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        title={promptModal.title}
+        message={promptModal.message}
+        placeholder={promptModal.placeholder}
+        confirmText={promptModal.confirmText}
+        cancelText={promptModal.cancelText}
+        required={promptModal.required}
+        variant={promptModal.variant}
+        onConfirm={promptModal.onConfirm}
+        onCancel={promptModal.onCancel}
       />
     </PopupContext.Provider>
   );

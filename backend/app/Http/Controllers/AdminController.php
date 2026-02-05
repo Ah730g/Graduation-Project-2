@@ -149,11 +149,64 @@ class AdminController extends Controller
     {
         $request->validate([
             'status' => 'required|in:active,disabled',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         $user = User::findOrFail($id);
+        $oldStatus = $user->status;
+        
+        // Prevent disabling admin users
+        if ($user->role === 'admin' && $request->status === 'disabled') {
+            return response()->json([
+                'message' => 'Cannot disable admin users'
+            ], 403);
+        }
+        
+        // Prevent user from disabling their own account
+        if ($request->user()->id === $id && $request->status === 'disabled') {
+            return response()->json([
+                'message' => 'You cannot disable your own account'
+            ], 403);
+        }
+        
         $user->status = $request->status;
         $user->save();
+        
+        // Log the status change (Audit Log)
+        \App\Models\UserStatusChange::create([
+            'user_id' => $user->id,
+            'changed_by' => $request->user()->id,
+            'old_status' => $oldStatus,
+            'new_status' => $request->status,
+            'reason' => $request->input('reason'),
+        ]);
+        
+        // If disabling, delete all user tokens and send notification
+        if ($request->status === 'disabled') {
+            // Delete all user sessions/tokens
+            $user->tokens()->delete();
+            
+            // Send notification to user
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'type' => 'account_disabled',
+                'title' => 'Account Disabled',
+                'message' => 'Your account has been disabled by an administrator.' . 
+                    ($request->input('reason') ? ' Reason: ' . $request->input('reason') : ''),
+                'data' => [
+                    'reason' => $request->input('reason'),
+                    'disabled_by' => $request->user()->id,
+                ],
+            ]);
+        } elseif ($oldStatus === 'disabled' && $request->status === 'active') {
+            // If re-enabling, send notification
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'type' => 'account_enabled',
+                'title' => 'Account Enabled',
+                'message' => 'Your account has been enabled by an administrator.',
+            ]);
+        }
 
         return response()->json(['message' => 'User status updated successfully', 'user' => $user]);
     }
@@ -161,7 +214,7 @@ class AdminController extends Controller
     /**
      * Delete a user
      */
-    public function deleteUser($id)
+    public function deleteUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
         
@@ -169,10 +222,42 @@ class AdminController extends Controller
         if ($user->role === 'admin') {
             return response()->json(['message' => 'Cannot delete admin user'], 403);
         }
-
+        
+        // Prevent user from deleting their own account
+        if ($request->user()->id === $id) {
+            return response()->json([
+                'message' => 'You cannot delete your own account'
+            ], 403);
+        }
+        
+        // Check for active contracts
+        $activeContracts = $user->contracts()->where('status', 'active')->count();
+        if ($activeContracts > 0) {
+            return response()->json([
+                'message' => "Cannot delete user with {$activeContracts} active contract(s). Please cancel contracts first.",
+                'active_contracts' => $activeContracts
+            ], 400);
+        }
+        
+        // Get user stats before deletion
+        $userStats = [
+            'total_posts' => $user->post->count(),
+            'total_contracts' => $user->contracts->count(),
+            'total_rental_requests' => $user->rentalRequests->count(),
+            'total_reviews' => $user->reviews->count(),
+            'total_saved_posts' => $user->savedPost->count(),
+        ];
+        
+        // Delete all user tokens/sessions
+        $user->tokens()->delete();
+        
+        // Delete the user (cascade will handle related records)
         $user->delete();
 
-        return response()->json(['message' => 'User deleted successfully']);
+        return response()->json([
+            'message' => 'User deleted successfully',
+            'deleted_stats' => $userStats
+        ]);
     }
 
     /**
@@ -232,13 +317,86 @@ class AdminController extends Controller
     {
         $request->validate([
             'status' => 'required|in:active,pending,rented,blocked',
+            'reason' => 'nullable|string|max:500',
         ]);
 
-        $post = Post::findOrFail($id);
+        $post = Post::with(['user', 'contracts', 'rentalRequests'])->findOrFail($id);
+        $oldStatus = $post->status;
+        
+        // If blocking, check for active contracts
+        if ($request->status === 'blocked') {
+            $activeContracts = $post->contracts()
+                ->where('status', 'active')
+                ->where('end_date', '>=', now())
+                ->count();
+                
+            if ($activeContracts > 0) {
+                return response()->json([
+                    'message' => "Cannot block post with {$activeContracts} active contract(s). Please wait for contracts to expire or cancel them first.",
+                    'active_contracts' => $activeContracts
+                ], 400);
+            }
+            
+            // Cancel pending rental requests
+            $pendingRequests = $post->rentalRequests()
+                ->where('status', 'pending')
+                ->get();
+                
+            foreach ($pendingRequests as $rentalRequest) {
+                $rentalRequest->update(['status' => 'cancelled']);
+                
+                // Notify user about cancellation
+                \App\Models\Notification::create([
+                    'user_id' => $rentalRequest->user_id,
+                    'type' => 'booking_cancelled',
+                    'title' => 'Booking Request Cancelled',
+                    'message' => "Your booking request for '{$post->Title}' has been cancelled because the post was blocked by an administrator.",
+                    'data' => [
+                        'booking_request_id' => $rentalRequest->id,
+                        'post_id' => $post->id,
+                        'title' => $post->Title,
+                    ],
+                ]);
+            }
+        }
+        
         $post->status = $request->status;
         $post->save();
+        
+        // Send notifications
+        if ($request->status === 'blocked') {
+            // Notify post owner
+            \App\Models\Notification::create([
+                'user_id' => $post->user_id,
+                'type' => 'post_blocked',
+                'title' => 'Post Blocked',
+                'message' => "Your post '{$post->Title}' has been blocked by an administrator." . 
+                    ($request->input('reason') ? ' Reason: ' . $request->input('reason') : ''),
+                'data' => [
+                    'post_id' => $post->id,
+                    'title' => $post->Title,
+                    'reason' => $request->input('reason'),
+                    'blocked_by' => $request->user()->id,
+                ],
+            ]);
+        } elseif ($oldStatus === 'blocked' && $request->status === 'active') {
+            // If unblocking, notify owner
+            \App\Models\Notification::create([
+                'user_id' => $post->user_id,
+                'type' => 'post_unblocked',
+                'title' => 'Post Unblocked',
+                'message' => "Your post '{$post->Title}' has been unblocked and is now active.",
+                'data' => [
+                    'post_id' => $post->id,
+                    'title' => $post->Title,
+                ],
+            ]);
+        }
 
-        return response()->json(['message' => 'Post status updated successfully', 'post' => $post]);
+        return response()->json([
+            'message' => 'Post status updated successfully', 
+            'post' => $post
+        ]);
     }
 
     /**

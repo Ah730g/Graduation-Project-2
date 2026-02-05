@@ -55,6 +55,14 @@ class AuthController extends Controller
                 return response(['message' => "User Not Found"],404);
             if(!Hash::check($data["password"],$user->password))
                 return response(["message" => "password is not correct"],404);
+            
+            // Check if user account is disabled
+            if($user->status === 'disabled') {
+                return response([
+                    'message' => 'Your account has been disabled. Please contact support.'
+                ], 403);
+            }
+            
             auth()->login($user);
             $userDTO = new UserResource($user);
             $token = $user->createToken("user_token")->plainTextToken;

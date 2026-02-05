@@ -43,6 +43,13 @@ class BookingController extends Controller
         // Refresh post to get latest status after expiration check
         $post->refresh();
 
+        // Check if post is blocked
+        if ($post->status === 'blocked') {
+            return response()->json([
+                'message' => 'This apartment has been blocked and is not available for booking'
+            ], 403);
+        }
+
         // Check if post is available (not rented and not draft)
         if ($post->status === 'rented' || $post->status === 'draft') {
             return response()->json(['message' => 'This apartment is not available for booking'], 403);

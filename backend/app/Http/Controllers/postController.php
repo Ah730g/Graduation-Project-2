@@ -21,9 +21,10 @@ class postController extends Controller
     {
         $query = Post::query();
 
-        // Exclude draft and rented posts from public listings
+        // Exclude draft, rented, and blocked posts from public listings
         $query->where("status", "!=", "draft")
               ->where("status", "!=", "rented")
+              ->where("status", "!=", "blocked")
               // Also exclude posts with active/scheduled contracts (exclude expired ones)
               ->whereDoesntHave('contracts', function($q) {
                   $q->whereIn('status', ['active', 'signed', 'pending_signing', 'pending'])

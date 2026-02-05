@@ -16,7 +16,7 @@ function ApartmentManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const { setMessage } = useUserContext();
-  const { showConfirm } = usePopup();
+  const { showConfirm, showPrompt } = usePopup();
   const highlightedId = searchParams.get('postId');
 
   useEffect(() => {
@@ -47,22 +47,82 @@ function ApartmentManagement() {
       });
   };
 
-  const handleStatusUpdate = (post, newStatus) => {
-    AxiosClient.patch(`/admin/posts/${post.id}/status`, { status: newStatus })
-      .then(() => {
-        setMessage(
-          t("admin.post") +
-            " " +
-            translateStatus(newStatus) +
-            " " +
-            t("common.success")
-        );
-        fetchPosts();
-      })
-      .catch((error) => {
-        console.error("Error updating post status:", error);
-        setMessage(t("admin.errorUpdatingPost"), "error");
+  const handleStatusUpdate = async (post, newStatus) => {
+    // If blocking, ask for reason and confirmation
+    if (newStatus === "blocked") {
+      // First confirmation
+      const confirmed = await showConfirm({
+        title: t("admin.block") + " " + t("admin.post"),
+        message: `${t("admin.block")} "${post.Title}"?\n\n${t("admin.thisWillBlockPost")}`,
+        confirmText: t("admin.continue") || "Continue",
+        cancelText: t("admin.cancel"),
+        variant: "warning",
       });
+
+      if (!confirmed) return;
+
+      // Ask for reason
+      const reason = await showPrompt({
+        title: t("admin.blockPost") || "Block Post",
+        message: t("admin.reasonForBlocking") || "Please provide a reason for blocking this post:",
+        placeholder: t("admin.enterReason") || "Enter reason...",
+        confirmText: t("admin.continue") || "Continue",
+        cancelText: t("admin.cancel") || "Cancel",
+        required: true,
+        variant: "danger",
+      });
+
+      if (!reason) return;
+
+      // Final confirmation
+      const finalConfirm = await showConfirm({
+        title: t("admin.finalConfirmation") || "Final Confirmation",
+        message: t("admin.blockPostFinalWarning") || 
+          "Are you sure you want to block this post? The owner and users with pending requests will be notified.",
+        confirmText: t("admin.block") || "Block",
+        cancelText: t("admin.cancel") || "Cancel",
+        variant: "danger",
+      });
+
+      if (finalConfirm) {
+        AxiosClient.patch(`/admin/posts/${post.id}/status`, { 
+          status: newStatus,
+          reason: reason 
+        })
+          .then(() => {
+            setMessage(
+              t("admin.post") +
+                " " +
+                translateStatus(newStatus) +
+                " " +
+                t("common.success")
+            );
+            fetchPosts();
+          })
+          .catch((error) => {
+            console.error("Error updating post status:", error);
+            const errorMessage = error.response?.data?.message || t("admin.errorUpdatingPost");
+            setMessage(errorMessage, "error");
+          });
+      }
+    } else {
+      // For other status changes (unblock, etc.)
+      AxiosClient.patch(`/admin/posts/${post.id}/status`, { status: newStatus })
+        .then(() => {
+          setMessage(
+            t("admin.post") +
+              " " +
+              translateStatus(newStatus) +
+              " " +
+              t("common.success")
+          );
+          fetchPosts();
+        })
+        .catch((error) => {
+          console.error("Error updating post status:", error);
+          setMessage(t("admin.errorUpdatingPost"), "error");
+        });
+    }
   };
 
   const handleDelete = async (post) => {
@@ -127,18 +187,28 @@ function ApartmentManagement() {
         variant: "default",
       },
     ];
+    
     if (post.status !== "blocked") {
       actionButtons.push({
         label: t("admin.block"),
         onClick: () => handleStatusUpdate(post, "blocked"),
         variant: "danger",
       });
+    } else {
+      // Add unblock button if post is blocked
+      actionButtons.push({
+        label: t("admin.unblock") || "Unblock",
+        onClick: () => handleStatusUpdate(post, "active"),
+        variant: "success",
+      });
     }
+    
     actionButtons.push({
       label: t("admin.delete"),
       onClick: () => handleDelete(post),
       variant: "danger",
     });
+    
     return actionButtons;
   };
 

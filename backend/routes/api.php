@@ -37,7 +37,7 @@ Route::middleware(['throttle:5,1'])->group(function () {
 Route::post('/floor-plan/generate-manual', [FloorPlanController::class, 'generateManual'])->middleware('throttle:20,1');
 Route::post('/floor-plan/save', [FloorPlanController::class, 'save'])->middleware('throttle:10,1');
 
-Route::middleware("auth:sanctum")->group(function () {
+Route::middleware(["auth:sanctum", "check.status"])->group(function () {
 
         Route::post("/logout",[AuthController::class, "Logout"]);
         Route::get("/user",function(Request $request){

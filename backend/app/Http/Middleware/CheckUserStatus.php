@@ -6,10 +6,11 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class CheckUserStatus
 {
     /**
      * Handle an incoming request.
+     * Check if the authenticated user's account is disabled
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
@@ -17,13 +18,14 @@ class AdminMiddleware
     {
         $user = $request->user();
         
-        if (!$user || $user->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
-        }
-        
-        // Check if admin account is disabled
-        if ($user->status === 'disabled') {
-            return response()->json(['message' => 'Your admin account has been disabled.'], 403);
+        if ($user && $user->status === 'disabled') {
+            // Delete all user tokens to force logout
+            $user->tokens()->delete();
+            
+            return response()->json([
+                'message' => 'Your account has been disabled. Please contact support.',
+                'status' => 'disabled'
+            ], 403);
         }
         
         return $next($request);

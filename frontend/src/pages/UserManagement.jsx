@@ -14,7 +14,7 @@ function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const { setMessage } = useUserContext();
   const { t, translateRole, translateStatus, language } = useLanguage();
-  const { showConfirm } = usePopup();
+  const { showConfirm, showPrompt } = usePopup();
 
   useEffect(() => {
     fetchUsers();
@@ -43,9 +43,31 @@ function UserManagement() {
       });
   };
 
-  const handleToggleStatus = (user) => {
+  const handleToggleStatus = async (user) => {
     const newStatus = user.status === "active" ? "disabled" : "active";
-    AxiosClient.patch(`/admin/users/${user.id}/status`, { status: newStatus })
+    
+    // If disabling, ask for reason
+    let reason = null;
+    if (newStatus === "disabled") {
+      reason = await showPrompt({
+        title: t("admin.disableUser") || "Disable User",
+        message: t("admin.reasonForDisabling") || "Please provide a reason for disabling this user:",
+        placeholder: t("admin.enterReason") || "Enter reason...",
+        confirmText: t("admin.disable") || "Disable",
+        cancelText: t("admin.cancel") || "Cancel",
+        required: true,
+        variant: "warning",
+      });
+      
+      if (!reason) {
+        return; // User cancelled
+      }
+    }
+    
+    AxiosClient.patch(`/admin/users/${user.id}/status`, { 
+      status: newStatus,
+      reason: reason 
+    })
       .then(() => {
         setMessage(
           t("admin.user") +
@@ -60,22 +82,62 @@ function UserManagement() {
       })
       .catch((error) => {
         console.error("Error updating user status:", error);
-        setMessage(t("admin.errorUpdatingStatus"), "error");
+        const errorMessage = error.response?.data?.message || t("admin.errorUpdatingStatus");
+        setMessage(errorMessage, "error");
       });
   };
 
   const handleDelete = async (user) => {
+    // First: Fetch user details to show stats
+    let userStats = null;
+    try {
+      const detailsResponse = await AxiosClient.get(`/admin/users/${user.id}`);
+      userStats = detailsResponse.data.stats;
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+
+    // First confirmation with stats
     const confirmed = await showConfirm({
       title: t("admin.delete") + " " + t("admin.user"),
-      message: `${t("admin.delete")} ${t("admin.user")} ${user.name}?`,
-      confirmText: t("admin.delete"),
+      message: userStats 
+        ? `${t("admin.delete")} ${t("admin.user")} "${user.name}"?\n\n${t("admin.thisWillDelete")}:\n• ${userStats.total_posts || 0} ${t("admin.posts")}\n• ${userStats.total_contracts || 0} ${t("admin.contracts")}\n• ${userStats.total_rental_requests || 0} ${t("admin.rentalRequests")}\n• ${userStats.total_reviews || 0} ${t("admin.reviews")}\n• ${userStats.total_saved_posts || 0} ${t("admin.savedPosts")}\n\n${t("admin.thisActionCannotBeUndone")}`
+        : `${t("admin.delete")} ${t("admin.user")} "${user.name}"?`,
+      confirmText: t("admin.continue") || "Continue",
       cancelText: t("admin.cancel"),
+      variant: "warning",
+    });
+
+    if (!confirmed) return;
+
+    // Ask for reason
+    const reason = await showPrompt({
+      title: t("admin.deleteUser") || "Delete User",
+      message: t("admin.reasonForDeleting") || "Please provide a reason for deleting this user:",
+      placeholder: t("admin.enterReason") || "Enter reason...",
+      confirmText: t("admin.continue") || "Continue",
+      cancelText: t("admin.cancel") || "Cancel",
+      required: true,
       variant: "danger",
     });
 
-    if (confirmed) {
-      AxiosClient.delete(`/admin/users/${user.id}`)
-        .then(() => {
+    if (!reason) return;
+
+    // Final confirmation
+    const finalConfirm = await showConfirm({
+      title: t("admin.finalConfirmation") || "Final Confirmation",
+      message: t("admin.deleteUserFinalWarning") || 
+        "Are you absolutely sure you want to permanently delete this user? This action cannot be undone.",
+      confirmText: t("admin.delete") || "Delete",
+      cancelText: t("admin.cancel") || "Cancel",
+      variant: "danger",
+    });
+
+    if (finalConfirm) {
+      AxiosClient.delete(`/admin/users/${user.id}`, { 
+        data: { reason } 
+      })
+        .then((response) => {
           setMessage(
             t("admin.user") +
               " " +
@@ -87,7 +149,8 @@ function UserManagement() {
         })
         .catch((error) => {
           console.error("Error deleting user:", error);
-          setMessage(t("admin.errorDeletingUser"), "error");
+          const errorMessage = error.response?.data?.message || t("admin.errorDeletingUser");
+          setMessage(errorMessage, "error");
         });
     }
   };
