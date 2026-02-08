@@ -13,10 +13,10 @@ import { createFurnitureMaterial } from './materials';
 function PrimitiveSofa({ size, position = [0, 0, 0], rotation }) {
   const [width, height, depth] = size;
   const material = createFurnitureMaterial('sofa');
-  const seatHeight = height * 0.4;
-  const backHeight = height * 0.6;
-  const armrestHeight = height * 0.8;
-  const armrestWidth = depth * 0.3;
+  const seatHeight = height * 0.42;
+  const backHeight = height * 0.58;
+  const armrestHeight = height * 0.78;
+  const armrestWidth = depth * 0.28;
 
   return (
     <group position={position} rotation={rotation}>
@@ -438,9 +438,9 @@ function PrimitiveBookshelf({ size, position = [0, 0, 0], rotation }) {
         <primitive object={material} attach="material" />
       </mesh>
       
-      {/* الرفوف */}
+      {/* الرفوف — مراكزها من 0 إلى height لتماس القاعدة مع الأرض */}
       {Array.from({ length: numShelves }).map((_, i) => {
-        const shelfY = (height / numShelves) * (i + 1) - height / 2;
+        const shelfY = (height / numShelves) * (i + 0.5);
         return (
           <mesh key={i} position={[0, shelfY, 0]}>
             <boxGeometry args={[width, shelfThickness, depth]} />
@@ -500,9 +500,9 @@ function PrimitiveShoeRack({ size, position = [0, 0, 0], rotation }) {
         <primitive object={material} attach="material" />
       </mesh>
       
-      {/* الرفوف */}
+      {/* الرفوف — مراكزها من 0 إلى height لتماس القاعدة مع الأرض */}
       {Array.from({ length: numShelves }).map((_, i) => {
-        const shelfY = (height / numShelves) * (i + 1) - height / 2;
+        const shelfY = (height / numShelves) * (i + 0.5);
         return (
           <mesh key={i} position={[0, shelfY, 0]}>
             <boxGeometry args={[width * 0.9, shelfThickness, depth * 0.9]} />
@@ -535,9 +535,9 @@ function PrimitiveShelves({ size, position = [0, 0, 0], rotation }) {
         <primitive object={material} attach="material" />
       </mesh>
       
-      {/* الرفوف */}
+      {/* الرفوف — مراكزها من 0 إلى height لتماس القاعدة مع الأرض */}
       {Array.from({ length: numShelves }).map((_, i) => {
-        const shelfY = (height / numShelves) * (i + 1) - height / 2;
+        const shelfY = (height / numShelves) * (i + 0.5);
         return (
           <mesh key={i} position={[0, shelfY, 0]}>
             <boxGeometry args={[width, shelfThickness, depth]} />

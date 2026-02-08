@@ -1,6 +1,6 @@
-import React, { Suspense, Component } from 'react';
+import React, { Suspense, Component, useRef, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Html } from '@react-three/drei';
 import Room3DComponent from './Room3D';
 
 class ErrorBoundary extends Component {
@@ -38,7 +38,19 @@ class ErrorBoundary extends Component {
   }
 }
 
-export default function FloorPlan3D({ layout, onClose }) {
+export default function FloorPlan3D({ layout, onClose, onRoomClick, onRoomEdit, onRoomDelete }) {
+  const containerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
   if (!layout || !layout.rooms || layout.rooms.length === 0) {
     return (
       <div className="text-center p-8 text-gray-500 bg-gray-50 rounded-lg">
@@ -53,10 +65,27 @@ export default function FloorPlan3D({ layout, onClose }) {
   const centerZ = layout.total_height_m / 2;
   const maxDimension = Math.max(layout.total_width_m, layout.total_height_m);
   const cameraDistance = maxDimension * 1.5;
+  
+  // اسم المشروع
+  const projectTitle = layout.title || 'مشروع';
+  
+  // موضع اسم المشروع على الأرضية - في أطراف الأرضية بعيداً عن الشقة
+  // نضعه في أقصى أطراف الأرضية (في الزاوية السفلية اليمنى من المشهد)
+  const titlePosition = [
+    centerX + maxDimension * 1.2, // في أطراف الأرضية على المحور X (إلى اليمين)
+    0.15, // فوق الأرضية مباشرة
+    centerZ + maxDimension * 1.2, // في أطراف الأرضية على المحور Z (إلى الأمام)
+  ];
+
+  React.useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   return (
     <ErrorBoundary>
-      <div className="relative w-full h-[600px] bg-gray-900 rounded-xl overflow-hidden">
+      <div ref={containerRef} className="relative w-full h-[600px] bg-gray-900 rounded-xl overflow-hidden">
         {onClose && (
           <button
             onClick={onClose}
@@ -66,6 +95,15 @@ export default function FloorPlan3D({ layout, onClose }) {
             ✕ إغلاق العرض 3D
           </button>
         )}
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="absolute top-4 right-24 z-10 bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg shadow-lg font-medium transition"
+          style={{ direction: 'rtl' }}
+          title={isFullscreen ? 'الخروج من الشاشة الكاملة' : 'الشاشة الكاملة'}
+        >
+          {isFullscreen ? '⤓ الخروج من الشاشة الكاملة' : '⛶ الشاشة الكاملة'}
+        </button>
         
         <Canvas
           gl={{ 
@@ -108,18 +146,58 @@ export default function FloorPlan3D({ layout, onClose }) {
             enableRotate={true}
           />
 
-          {/* الأرضية الخلفية */}
+          {/* الأرضية الخلفية - بلون متوسط داكن لتحسين التباين مع ألوان الشقة الفاتحة */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             position={[centerX, -0.1, centerZ]}
           >
             <planeGeometry args={[maxDimension * 3, maxDimension * 3]} />
-            <meshStandardMaterial color="#f0f0f0" />
+            <meshStandardMaterial 
+              color="#5A5A5A" 
+              roughness={0.9}
+              metalness={0.0}
+            />
           </mesh>
+
+          {/* اسم المشروع على الأرضية - ثابت لا يتحرك مع الكاميرا */}
+          {projectTitle && (
+            <Html
+              position={titlePosition}
+              transform={false}
+              style={{
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+              occlude={false}
+            >
+              <div
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '28px',
+                  fontWeight: '900',
+                  color: '#FFFFFF',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'Tahoma, Arial, sans-serif',
+                  letterSpacing: '3px',
+                  display: 'inline-block',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                }}
+              >
+                {projectTitle}
+              </div>
+            </Html>
+          )}
 
           {/* رسم الغرف */}
           {layout.rooms.map((room, index) => (
-            <Room3DComponent key={room.id || `room-${index}`} room={room} />
+            <Room3DComponent 
+              key={room.id || `room-${index}`} 
+              room={room}
+              onRoomClick={onRoomClick}
+              onRoomEdit={onRoomEdit}
+              onRoomDelete={onRoomDelete}
+            />
           ))}
         </Suspense>
       </Canvas>

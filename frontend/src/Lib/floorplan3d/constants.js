@@ -13,8 +13,8 @@ export const FURNITURE_DIMENSIONS = {
   sofa: { width: 2.0, height: 0.9, depth: 0.9 },
   tv: { width: 1.5, height: 0.9, depth: 0.2 },
   coffee_table: { width: 1.2, height: 0.4, depth: 0.6 },
-  bed: { width: 1.6, height: 0.5, depth: 2.0 },
-  king_bed: { width: 2.0, height: 0.5, depth: 2.0 },
+  bed: { width: 1.9, height: 0.6, depth: 2.2 },
+  king_bed: { width: 2.2, height: 0.6, depth: 2.3 },
   wardrobe: { width: 1.2, height: 2.0, depth: 0.6 },
   nightstand: { width: 0.5, height: 0.5, depth: 0.4 },
   vanity: { width: 1.0, height: 0.8, depth: 0.5 },
@@ -43,29 +43,29 @@ export const MATERIAL_COLORS = {
     carpet: '#CD853F',
   },
   wall: {
-    paint: '#F5F5F5',
-    wallpaper: '#FFF8DC',
-    stone: '#A9A9A9',
-    brick: '#CD853F',
+    paint: '#F5F0E6',
+    wallpaper: '#FAF6F0',
+    stone: '#E0D8CC',
+    brick: '#D4B896',
   },
   ceiling: {
     default: '#FFFFFF',
   },
 };
 
-// ألوان الغرف حسب النوع
+// ألوان الغرف حسب النوع (أرضية أغمق لتباين أوضح مع الجدران والأثاث)
 export const ROOM_COLORS = {
-  living: '#E8F5E9',
-  bedroom: '#E3F2FD',
-  master_bedroom: '#F3E5F5',
-  kitchen: '#FFF3E0',
-  bathroom: '#E0F2F1',
-  dining: '#FCE4EC',
-  office: '#E8EAF6',
-  balcony: '#F1F8E9',
-  entrance: '#FAFAFA',
-  corridor: '#ECEFF1',
-  storage: '#EFEBE9',
-  other: '#F5F5F5',
+  living: '#9CB59E',
+  bedroom: '#7B9BC2',
+  master_bedroom: '#B895BB',
+  kitchen: '#C4A574',
+  bathroom: '#6B9B97',
+  dining: '#C48594',
+  office: '#7A7E9E',
+  balcony: '#8FA872',
+  entrance: '#9A9A9A',
+  corridor: '#8A8E92',
+  storage: '#A09890',
+  other: '#8E8E8E',
 };
 

@@ -316,6 +316,26 @@ function generateWalls(room, wallHeight, layout) {
   return walls;
 }
 
+/** أنواع الأثاث ذات دوران يبدّل البصمة في XZ (نستخدم أقصى عرض/عمق للـ clamping) */
+const FURNITURE_EFFECTIVE_FOOTPRINT_TYPES = ['bed', 'king_bed'];
+/** هامش أمان بسيط للسرير بعد تركيز النموذج في Furniture3D */
+const BED_CLAMP_SAFETY_MARGIN = 1.05;
+
+/** حد أدنى لعرض/عمق القطعة بالأمتار عند أخذ الحجم من 2D */
+const MIN_FURNITURE_SIZE_M = 0.3;
+
+/**
+ * اختبار تداخل مستطيلين (AABB) في المستوى XZ
+ * كل مستطيل: { centerX, centerZ, halfWidth, halfDepth }
+ */
+function rectsOverlap(a, b) {
+  const dx = Math.abs(a.centerX - b.centerX);
+  const dz = Math.abs(a.centerZ - b.centerZ);
+  const sumHalfW = a.halfWidth + b.halfWidth;
+  const sumHalfD = a.halfDepth + b.halfDepth;
+  return dx < sumHalfW && dz < sumHalfD;
+}
+
 /**
  * تحويل الأثاث من 2D إلى 3D
  */
@@ -326,13 +346,27 @@ function convertFurnitureTo3D(furnitureItems, room, wallHeight) {
     return [];
   }
 
-  // Calculate scale - use width_px if available, otherwise estimate from width_m
-  const scale = room.width_px && room.width_px > 0 
-    ? room.width_px / room.width_m 
-    : 50; // Default scale (50px per meter)
+  // مقياس منفصل للمحور الأفقي والعمودي لضمان تطابق الموضع مع المخطط 2D
+  const defaultScale = 50; // 50px per meter
+  const scaleX = room.width_px && room.width_px > 0
+    ? room.width_px / room.width_m
+    : defaultScale;
+  const scaleY = room.height_px && room.height_px > 0
+    ? room.height_px / room.height_m
+    : defaultScale;
   const furniture3D = [];
   const wallThickness = DEFAULT_WALL_THICKNESS;
   const padding = 0.1; // مسافة أمان من الجدران (10 سم)
+  // سطح الأرضية العلوي في المشهد (الأثاث يجب أن يقف عليه)
+  const floorLevelY = DEFAULT_FLOOR_THICKNESS / 2;
+
+  // حدود الغرفة الفعلية (داخل الجدران)
+  const roomMinX = room.x_m + wallThickness / 2 + padding;
+  const roomMaxX = room.x_m + room.width_m - wallThickness / 2 - padding;
+  const roomMinZ = room.y_m + wallThickness / 2 + padding;
+  const roomMaxZ = room.y_m + room.height_m - wallThickness / 2 - padding;
+  const maxWidth_m = roomMaxX - roomMinX;
+  const maxDepth_m = roomMaxZ - roomMinZ;
 
   if (!Array.isArray(furnitureItems)) {
     return [];
@@ -341,30 +375,74 @@ function convertFurnitureTo3D(furnitureItems, room, wallHeight) {
   for (const item of furnitureItems) {
     const dimensions = FURNITURE_DIMENSIONS[item.type] || { width: 0.5, height: 0.5, depth: 0.5 };
 
+    // حجم من 2D مع حد أقصى حسب الغرفة وحد أدنى
+    const widthFrom2D_m = (item.width != null && item.width > 0) ? item.width / scaleX : dimensions.width;
+    const depthFrom2D_m = (item.height != null && item.height > 0) ? item.height / scaleY : dimensions.depth;
+    const width_m = Math.max(MIN_FURNITURE_SIZE_M, Math.min(widthFrom2D_m, maxWidth_m));
+    const depth_m = Math.max(MIN_FURNITURE_SIZE_M, Math.min(depthFrom2D_m, maxDepth_m));
+
     // تحويل الإحداثيات من pixels إلى meters
-    // item.x و item.y هما من الزاوية العلوية اليسرى، نحتاج المركز
-    // نضيف نصف العرض والارتفاع للحصول على المركز
     const itemCenterX_px = item.x + item.width / 2;
     const itemCenterY_px = item.y + item.height / 2;
-    
-    const x_m = room.x_m + itemCenterX_px / scale;
-    const z_m = room.y_m + itemCenterY_px / scale;
+    const x_m = room.x_m + itemCenterX_px / scaleX;
+    const z_m = room.y_m + itemCenterY_px / scaleY;
 
-    // التأكد من أن الأثاث لا يخرج من حدود الغرفة (مع مراعاة الجدران)
-    // حدود الغرفة الفعلية (داخل الجدران)
-    const roomMinX = room.x_m + wallThickness / 2 + padding;
-    const roomMaxX = room.x_m + room.width_m - wallThickness / 2 - padding;
-    const roomMinZ = room.y_m + wallThickness / 2 + padding;
-    const roomMaxZ = room.y_m + room.height_m - wallThickness / 2 - padding;
+    // بصمة فعالة للـ clamping: للسرير نستخدم أقصى نصف قياس + هامش أمان (النموذج قد يمتد أكثر)
+    const useEffectiveFootprint = FURNITURE_EFFECTIVE_FOOTPRINT_TYPES.includes(item.type);
+    const maxHalfW = maxWidth_m / 2;
+    const maxHalfD = maxDepth_m / 2;
+    const effectiveSize = useEffectiveFootprint
+      ? Math.min(maxHalfW * 2, maxHalfD * 2, Math.max(width_m, depth_m, dimensions.width, dimensions.depth) * BED_CLAMP_SAFETY_MARGIN)
+      : null;
+    const halfW = useEffectiveFootprint ? Math.min(effectiveSize / 2, maxHalfW) : width_m / 2;
+    const halfD = useEffectiveFootprint ? Math.min(effectiveSize / 2, maxHalfD) : depth_m / 2;
 
-    // التأكد من أن مركز الأثاث لا يخرج من الحدود
-    const clampedX_m = Math.max(roomMinX + dimensions.width / 2, Math.min(roomMaxX - dimensions.width / 2, x_m));
-    const clampedZ_m = Math.max(roomMinZ + dimensions.depth / 2, Math.min(roomMaxZ - dimensions.depth / 2, z_m));
+    let clampedX_m = Math.max(roomMinX + halfW, Math.min(roomMaxX - halfW, x_m));
+    let clampedZ_m = Math.max(roomMinZ + halfD, Math.min(roomMaxZ - halfD, z_m));
+
+    // دوران من المحرر 2D (إن وُجد): بالراديان حول Y
+    const rotationY = item.rotation != null ? (typeof item.rotation === 'number' ? item.rotation * (Math.PI / 180) : item.rotation) : 0;
+    const rotation = [0, rotationY, 0];
+
+    // عند دوران 90° أو 270° حول Y نبدّل نصف العرض ونصف العمق للمستطيل 2D
+    const rot90 = Math.abs(Math.cos(rotationY)) < 0.1;
+    const rectHalfW = rot90 ? depth_m / 2 : width_m / 2;
+    const rectHalfD = rot90 ? width_m / 2 : depth_m / 2;
+
+    // كشف التداخل مع القطع المُضافة مسبقاً وإزاحة بسيطة
+    const nudgeStep = 0.05;
+    const maxNudgeAttempts = 80;
+    let attempts = 0;
+    const newRect = () => ({ centerX: clampedX_m, centerZ: clampedZ_m, halfWidth: rectHalfW, halfDepth: rectHalfD });
+    while (attempts < maxNudgeAttempts) {
+      const current = newRect();
+      let overlaps = false;
+      for (const placed of furniture3D) {
+        const rot90Placed = placed.rotation && Math.abs(Math.cos(placed.rotation[1])) < 0.1;
+        const hw = rot90Placed ? placed.size[2] / 2 : placed.size[0] / 2;
+        const hd = rot90Placed ? placed.size[0] / 2 : placed.size[2] / 2;
+        if (rectsOverlap(current, { centerX: placed.position[0], centerZ: placed.position[2], halfWidth: hw, halfDepth: hd })) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (!overlaps) break;
+      attempts++;
+      const centerRoomX = (roomMinX + roomMaxX) / 2;
+      const centerRoomZ = (roomMinZ + roomMaxZ) / 2;
+      clampedX_m = clampedX_m < centerRoomX
+        ? Math.min(clampedX_m + nudgeStep, roomMaxX - halfW)
+        : Math.max(clampedX_m - nudgeStep, roomMinX + halfW);
+      clampedZ_m = clampedZ_m < centerRoomZ
+        ? Math.min(clampedZ_m + nudgeStep, roomMaxZ - halfD)
+        : Math.max(clampedZ_m - nudgeStep, roomMinZ + halfD);
+    }
 
     furniture3D.push({
       type: item.type,
-      position: [clampedX_m, dimensions.height / 2, clampedZ_m],
-      size: [dimensions.width, dimensions.height, dimensions.depth],
+      position: [clampedX_m, floorLevelY, clampedZ_m],
+      size: [width_m, dimensions.height, depth_m],
+      rotation,
     });
   }
 
