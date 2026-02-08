@@ -58,17 +58,22 @@ function Navbar() {
       })
       .catch((error) => {
         // Handle 401 (unauthorized) silently - token might be expired or invalid
-        // The AxiosClient interceptor will handle clearing the token
+        // The AxiosClient interceptor will handle clearing the token and localStorage
+        // The auth:logout event listener will handle clearing the state
+        // So we don't need to manually clear user/token here
         if (error.response && error.response.status === 401) {
           setUnreadCount(0);
-          // Token will be cleared by AxiosClient interceptor
-          // Update local state to reflect logout
-          setToken(null);
-          setUser(null);
-        } else {
-          // Only log non-auth errors
-          console.error('Error fetching unread count:', error);
+          // Don't manually clear user/token here - let AxiosClient interceptor and event listener handle it
+        } else if (error.response && error.response.status === 403) {
+          // 403 might be account disabled, let the interceptor handle it
           setUnreadCount(0);
+        } else {
+          // Network errors or other issues - just reset count, don't log out user
+          setUnreadCount(0);
+          // Only log if it's a real error (not network issues)
+          if (error.response) {
+            console.error('Error fetching unread count:', error);
+          }
         }
       });
   };
@@ -119,17 +124,19 @@ function Navbar() {
             to="/"
           >
             <img src="/public/logo.png" alt="" className="w-7" />
-            <span className="max-lg:hidden max-md:block">LamaEstate</span>
+            <span className="max-lg:hidden max-md:block">{t('navbar.siteName')}</span>
           </Link>
-          <Link
-            href="#"
-            className={`hover:scale-105 transition duration-300 ease rounded-md max-md:hidden dark:text-gray-200 ${
-              location.pathname === '/' ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 px-3 py-1 font-bold rounded-md' : ''
-            }`}
-            to="/"
-          >
-            {t('navbar.home')}
-          </Link>
+          {user && (
+            <Link
+              href="#"
+              className={`hover:scale-105 transition duration-300 ease rounded-md max-md:hidden dark:text-gray-200 ${
+                location.pathname === '/' ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 px-3 py-1 font-bold rounded-md' : ''
+              }`}
+              to="/"
+            >
+              {t('navbar.home')}
+            </Link>
+          )}
           {!user && (
             <button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
@@ -225,11 +232,13 @@ function Navbar() {
                   className="flex items-center gap-2 hover:scale-105 transition duration-300 ease rounded-md p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <img
-                    src={user.avatar || '/avatar.png'}
+                    src={user?.avatar || '/avatar.png'}
                     alt=""
                     className="w-10 h-10 rounded-full object-cover border-2 border-yellow-300 dark:border-yellow-400"
                   />
-                  <span className="font-bold max-md:hidden dark:text-white text-sm">{user.name}</span>
+                  {user?.name && (
+                    <span className="font-bold max-md:hidden dark:text-white text-sm">{user.name}</span>
+                  )}
                   <svg
                     className={`w-4 h-4 transition-transform duration-300 dark:text-gray-200 ${profileDropdown ? 'rotate-180' : ''}`}
                     fill="none"
@@ -327,14 +336,20 @@ function Navbar() {
             <>
               <Link
                 href="#"
-                className="hover:scale-105 transition duration-300 ease rounded-md max-md:hidden dark:text-gray-200"
+                className={`hover:scale-105 transition duration-300 ease rounded-md max-md:hidden dark:text-gray-200 ${
+                  location.pathname === '/login' ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 px-3 py-1 font-bold rounded-md' : ''
+                }`}
                 to="/login"
               >
                 {t('navbar.login')}
               </Link>
               <Link
                 href="#"
-                className={`bg-yellow-300 dark:bg-yellow-400 px-4 py-2 hover:scale-105 transition duration-300 ease rounded-md max-md:hidden text-[#444] dark:text-gray-900 ${
+                className={`px-4 py-2 hover:scale-105 transition duration-300 ease rounded-md max-md:hidden font-bold dark:text-gray-200 ${
+                  location.pathname === '/signup' 
+                    ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900' 
+                    : ''
+                } ${
                   language === 'ar' ? 'ml-2' : 'mr-2'
                 }`}
                 to="/signup"

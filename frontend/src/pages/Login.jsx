@@ -31,6 +31,22 @@ function Login() {
         if (response) {
           if (response.status === 404) {
             setErrors({ message: [response.data?.message || 'User not found'] });
+          } else if (response.status === 403 && response.data?.status === 'disabled') {
+            // Account disabled - show detailed message with reason
+            const errorMessage = response.data?.message || 'Your account has been disabled.';
+            const reason = response.data?.reason;
+            const disabledAt = response.data?.disabled_at;
+            
+            let fullMessage = errorMessage;
+            if (reason) {
+              fullMessage += `\nReason: ${reason}`;
+            }
+            if (disabledAt) {
+              const date = new Date(disabledAt).toLocaleDateString();
+              fullMessage += `\nDisabled on: ${date}`;
+            }
+            
+            setErrors({ message: [fullMessage] });
           } else if (response.status === 422) {
             setErrors(response.data?.errors || { message: ['Validation error'] });
           } else if (response.status === 500) {
@@ -52,9 +68,9 @@ function Login() {
       <form action="" className="w-80 flex flex-col gap-4" onSubmit={onSubmit}>
         <h3 className="font-bold text-3xl text-center dark:text-white">{t('auth.login')}</h3>
         {errors && (
-          <div className="bg-red-500 dark:bg-red-600 text-white p-3 rounded-md">
+          <div className="bg-red-500 dark:bg-red-600 text-white p-3 rounded-md whitespace-pre-line">
             {Object.keys(errors).map((e, i) => {
-              return <p key={i}>{errors[e][0]}</p>;
+              return <p key={i} className="mb-1 last:mb-0">{errors[e][0]}</p>;
             })}
           </div>
         )}

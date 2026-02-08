@@ -2,8 +2,9 @@ const translations = {
   en: {
     // Navbar
     navbar: {
+      siteName: 'SHAQA',
       home: 'Home',
-      about: 'Apartments Management',
+      about: 'Apartments',
       contact: 'Contact',
       agents: 'Agents',
       profile: 'Profile',
@@ -11,7 +12,7 @@ const translations = {
       signup: 'Sign up',
       signIn: 'Sign in',
       logout: 'Logout',
-      bookingRequests: 'Booking Requests',
+      bookingRequests: 'Bookings',
       ratings: 'Ratings',
       notifications: 'Notifications',
       settings: 'Settings',
@@ -20,10 +21,12 @@ const translations = {
     },
     // Home Page
     home: {
-      title: 'Find Real Estate & Get You Dream Place',
+      title: 'Find Your Dream Home Today',
       description:
-        'Discover your perfect property with our comprehensive real estate platform. Browse through thousands of verified listings, connect with trusted property owners, and find the home of your dreams. Our secure booking system and transparent rental process make finding your next apartment easy and hassle-free.',
-      yearsExperience: 'Years of Experience',
+        'Your trusted partner in finding the perfect property. Explore thousands of verified listings, connect with reliable property owners, and discover your ideal home. Experience seamless booking and transparent rental processes designed to make your property search effortless.',
+      apartmentsCount: 'Available Apartments',
+      clientsCount: 'Happy Clients',
+      transactionsCount: 'Successful Transactions',
     },
     // Search
     search: {
@@ -330,7 +333,7 @@ const translations = {
     },
     // Support
     support: {
-      tickets: 'Support Tickets',
+      tickets: 'Support',
       createTicket: 'Create New Ticket',
       subject: 'Subject',
       subjectPlaceholder: 'Enter ticket subject',
@@ -590,6 +593,7 @@ const translations = {
       reasonForDisabling: 'Please provide a reason for disabling this user:',
       enterReason: 'Enter reason...',
       accountDisabled: 'Your account has been disabled',
+      accountEnabled: 'Account enabled successfully',
       contactSupport: 'Please contact support',
       delete: 'Delete',
       deleteUser: 'Delete User',
@@ -730,13 +734,14 @@ const translations = {
   ar: {
     // Navbar
     navbar: {
+      siteName: 'شقة',
       home: 'الرئيسية',
-      about: 'إدارة الشقق',
+      about: 'الشقق',
       contact: 'اتصل بنا',
       agents: 'الوكلاء',
       profile: 'الملف الشخصي',
-      bookingRequests: 'طلبات الحجز',
-      ratings: 'التقييمات',
+      bookingRequests: 'الحجز',
+      ratings: 'التقييم',
       notifications: 'الإشعارات',
       login: 'تسجيل الدخول',
       signup: 'إنشاء حساب',
@@ -748,10 +753,12 @@ const translations = {
     },
     // Home Page
     home: {
-      title: 'ابحث عن العقارات واحصل على مكان أحلامك',
+      title: 'ابحث عن منزل أحلامك اليوم',
       description:
-        'اكتشف العقار المثالي من خلال منصتنا الشاملة للعقارات. تصفح آلاف الإعلانات الموثوقة، تواصل مع أصحاب العقارات الموثوقين، واعثر على منزل أحلامك. نظام الحجز الآمن وعملية الإيجار الشفافة تجعل العثور على شقتك القادمة سهلاً وخالياً من المتاعب.',
-      yearsExperience: 'سنوات من الخبرة',
+        'شريكك الموثوق في العثور على العقار المثالي. استكشف آلاف الإعلانات الموثوقة، تواصل مع أصحاب العقارات الموثوقين، واكتشف منزلك المثالي. استمتع بعملية حجز سلسة وإيجار شفاف مصمم لجعل بحثك عن العقار سهلاً ومريحاً.',
+      apartmentsCount: 'شقة متاحة',
+      clientsCount: 'عميل سعيد',
+      transactionsCount: 'معاملة ناجحة',
     },
     // Search
     search: {
@@ -1059,7 +1066,7 @@ const translations = {
     },
     // Support
     support: {
-      tickets: 'تذاكر الدعم',
+      tickets: 'الدعم',
       createTicket: 'إنشاء تذكرة جديدة',
       subject: 'العنوان',
       subjectPlaceholder: 'أدخل عنوان التذكرة',
@@ -1318,6 +1325,7 @@ const translations = {
       reasonForDisabling: 'يرجى إدخال سبب تعطيل هذا المستخدم:',
       enterReason: 'أدخل السبب...',
       accountDisabled: 'تم تعطيل حسابك',
+      accountEnabled: 'تم تفعيل الحساب بنجاح',
       contactSupport: 'يرجى التواصل مع الدعم',
       delete: 'حذف',
       deleteUser: 'حذف المستخدم',

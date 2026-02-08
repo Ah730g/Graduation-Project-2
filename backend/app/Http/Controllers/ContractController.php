@@ -533,8 +533,9 @@ class ContractController extends Controller
         $isOwner = $contract->post->user_id === $user->id;
         $isRenter = $contract->user_id === $user->id || 
                    ($contract->rentalRequest && $contract->rentalRequest->user_id === $user->id);
+        $isAdmin = $user->role === 'admin';
 
-        if (!$isOwner && !$isRenter && !$user->isAdmin) {
+        if (!$isOwner && !$isRenter && !$isAdmin) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -566,14 +567,26 @@ class ContractController extends Controller
         $ownerIdentity = $contract->post->user->identityVerifications->first() ?? null;
         $renterIdentity = $renterUser ? ($renterUser->identityVerifications->first() ?? null) : null;
 
-        $pdf = Pdf::loadView('contracts.pdf', [
-            'contract' => $contract,
-            'ownerIdentity' => $ownerIdentity,
-            'renterIdentity' => $renterIdentity,
-        ]);
+        try {
+            $pdf = Pdf::loadView('contracts.pdf', [
+                'contract' => $contract,
+                'ownerIdentity' => $ownerIdentity,
+                'renterIdentity' => $renterIdentity,
+            ]);
 
-        $fileName = 'contract_' . $contract->id . '_' . date('Y-m-d') . '.pdf';
+            $fileName = 'contract_' . $contract->id . '_' . date('Y-m-d') . '.pdf';
 
-        return $pdf->download($fileName);
+            return $pdf->download($fileName);
+        } catch (\Exception $e) {
+            \Log::error('Error generating PDF for contract ' . $id, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'message' => 'Error generating PDF',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

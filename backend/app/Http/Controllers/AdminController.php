@@ -182,12 +182,13 @@ class AdminController extends Controller
         ]);
         
         // If disabling, delete all user tokens and send notification
+        $notification = null;
         if ($request->status === 'disabled') {
             // Delete all user sessions/tokens
             $user->tokens()->delete();
             
             // Send notification to user
-            \App\Models\Notification::create([
+            $notification = \App\Models\Notification::create([
                 'user_id' => $user->id,
                 'type' => 'account_disabled',
                 'title' => 'Account Disabled',
@@ -200,7 +201,7 @@ class AdminController extends Controller
             ]);
         } elseif ($oldStatus === 'disabled' && $request->status === 'active') {
             // If re-enabling, send notification
-            \App\Models\Notification::create([
+            $notification = \App\Models\Notification::create([
                 'user_id' => $user->id,
                 'type' => 'account_enabled',
                 'title' => 'Account Enabled',
@@ -208,7 +209,16 @@ class AdminController extends Controller
             ]);
         }
 
-        return response()->json(['message' => 'User status updated successfully', 'user' => $user]);
+        return response()->json([
+            'message' => 'User status updated successfully', 
+            'user' => $user,
+            'notification' => $notification ? [
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'message' => $notification->message,
+                'reason' => $notification->data['reason'] ?? null,
+            ] : null
+        ]);
     }
 
     /**

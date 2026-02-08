@@ -26,6 +26,9 @@ export default function LanguageProvider({ children }) {
     // Set initial direction
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
+    // Update document title based on language
+    const siteName = translations[language]?.navbar?.siteName || 'SHAQA';
+    document.title = siteName;
   }, [language]);
 
   // Translation function

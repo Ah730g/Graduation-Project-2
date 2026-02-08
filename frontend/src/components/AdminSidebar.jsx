@@ -26,11 +26,6 @@ function AdminSidebar() {
     { path: "/admin/contracts", labelKey: "admin.contracts", icon: "📄" },
     { path: "/admin/reviews", labelKey: "admin.reviews", icon: "⭐" },
     {
-      path: "/admin/notifications",
-      labelKey: "admin.notifications",
-      icon: "🔔",
-    },
-    {
       path: "/admin/support/tickets",
       labelKey: "admin.supportTickets",
       icon: "💬",
@@ -40,7 +35,6 @@ function AdminSidebar() {
       labelKey: "admin.reportsLabel",
       icon: "📈",
     },
-    { path: "/admin/settings", labelKey: "admin.settings", icon: "⚙️" },
   ];
 
   return (

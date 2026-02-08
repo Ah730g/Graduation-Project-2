@@ -58,8 +58,30 @@ class AuthController extends Controller
             
             // Check if user account is disabled
             if($user->status === 'disabled') {
+                // Get the latest account_disabled notification to show the reason
+                $lastNotification = \App\Models\Notification::where('user_id', $user->id)
+                    ->where('type', 'account_disabled')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                $message = 'Your account has been disabled. Please contact support.';
+                $reason = null;
+                $disabledAt = null;
+                
+                if ($lastNotification) {
+                    $reason = $lastNotification->data['reason'] ?? null;
+                    $disabledAt = $lastNotification->created_at;
+                    
+                    if ($reason) {
+                        $message .= ' Reason: ' . $reason;
+                    }
+                }
+                
                 return response([
-                    'message' => 'Your account has been disabled. Please contact support.'
+                    'message' => $message,
+                    'reason' => $reason,
+                    'disabled_at' => $disabledAt,
+                    'status' => 'disabled'
                 ], 403);
             }
             

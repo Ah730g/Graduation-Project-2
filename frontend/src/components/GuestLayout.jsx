@@ -10,11 +10,11 @@ function GuestLayout() {
      flex justify-between h-[calc(100vh-100px)]"
     >
       <Outlet />
-      <div className="image-container md:bg-[#fcf5f3] h-full w-2/5 relative max-lg:hidden">
+      <div className="image-container md:bg-[#fcf5f3] h-full w-2/5 relative max-lg:hidden overflow-hidden">
         <img
           src="/public/bg.png"
           alt=""
-          className={`absolute max-w-[115%] max-xl:max-w-[105%] ${
+          className={`absolute max-w-[110%] max-xl:max-w-[100%] z-0 ${
             language === 'ar' ? 'left-0' : 'right-0'
           }`}
         />

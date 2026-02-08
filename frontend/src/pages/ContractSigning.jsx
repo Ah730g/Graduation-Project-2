@@ -202,36 +202,63 @@ const ContractSigning = () => {
               {t('contract.contractDetails') || 'Contract Details'}
             </h1>
             <button
-              onClick={() => {
-                const token = localStorage.getItem('ACCESS_TOKEN');
-                fetch(`${AxiosClient.defaults.baseURL}/contracts/${id}/pdf`, {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/pdf',
-                  },
-                })
-                  .then(response => {
-                    if (!response.ok) {
-                      throw new Error('Network response was not ok');
-                    }
-                    return response.blob();
-                  })
-                  .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `contract_${id}_${new Date().toISOString().split('T')[0]}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    showToast(t('contract.downloadPdf') || 'PDF downloaded successfully', 'success');
-                  })
-                  .catch(error => {
-                    console.error('Error downloading PDF:', error);
-                    showToast(t('contract.errorDownloadingPdf') || 'Error downloading PDF', 'error');
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('ACCESS_TOKEN');
+                  if (!token) {
+                    showToast(t('contract.loginRequired') || 'Please login to download PDF', 'error');
+                    return;
+                  }
+
+                  const response = await fetch(`${AxiosClient.defaults.baseURL}/contracts/${id}/pdf`, {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Accept': 'application/pdf',
+                    },
                   });
+
+                  if (!response.ok) {
+                    // Try to get error message from response
+                    let errorMessage = 'Network response was not ok';
+                    try {
+                      const errorData = await response.json();
+                      errorMessage = errorData.message || errorMessage;
+                    } catch (e) {
+                      // If response is not JSON, use status text
+                      errorMessage = response.statusText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                  }
+
+                  // Check if response is actually PDF
+                  const contentType = response.headers.get('content-type');
+                  if (!contentType || !contentType.includes('application/pdf')) {
+                    // If not PDF, try to read as text to see error message
+                    const text = await response.text();
+                    try {
+                      const errorData = JSON.parse(text);
+                      throw new Error(errorData.message || 'Invalid response format');
+                    } catch (e) {
+                      throw new Error('Server returned non-PDF response');
+                    }
+                  }
+
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `contract_${id}_${new Date().toISOString().split('T')[0]}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                  showToast(t('contract.downloadPdf') || 'PDF downloaded successfully', 'success');
+                } catch (error) {
+                  console.error('Error downloading PDF:', error);
+                  const errorMessage = error.message || t('contract.errorDownloadingPdf') || 'Error downloading PDF';
+                  showToast(errorMessage, 'error');
+                }
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md transition flex items-center gap-2"
             >

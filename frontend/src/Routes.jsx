@@ -21,8 +21,6 @@ import ApartmentManagement from "./pages/ApartmentManagement";
 import RentalRequestsManagement from "./pages/RentalRequestsManagement";
 import ContractManagement from "./pages/ContractManagement";
 import ReviewsManagement from "./pages/ReviewsManagement";
-import AdminNotifications from "./pages/AdminNotifications";
-import AdminSettings from "./pages/AdminSettings";
 import IdentityVerification from "./pages/IdentityVerification";
 import IdentityVerificationReview from "./pages/IdentityVerificationReview";
 import BookingRequests from "./pages/BookingRequests";
@@ -173,14 +171,6 @@ const route = createBrowserRouter([
       {
         path: "reviews",
         element: <ReviewsManagement />,
-      },
-      {
-        path: "notifications",
-        element: <AdminNotifications />,
-      },
-      {
-        path: "settings",
-        element: <AdminSettings />,
       },
       {
         path: "identity-verifications",

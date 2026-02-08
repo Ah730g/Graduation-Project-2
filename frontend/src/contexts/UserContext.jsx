@@ -1,4 +1,4 @@
-import { createContext, useState, useContext } from "react";
+import { createContext, useState, useContext, useEffect } from "react";
 import AxiosClient from "../AxiosClient";
 
 const userContext = createContext({
@@ -14,7 +14,19 @@ const userContext = createContext({
 });
 
 export default function UserContextProvider({ children }) {
-  const [user, _setUser] = useState(JSON.parse(localStorage.getItem("user")));
+  // Safely parse user from localStorage
+  const getUserFromStorage = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error("Error parsing user from localStorage:", error);
+      localStorage.removeItem("user");
+      return null;
+    }
+  };
+  
+  const [user, _setUser] = useState(getUserFromStorage());
   const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
   const [message, _setMessage] = useState(null);
   const [messageStatus, setMessageStatus] = useState(null);
@@ -38,6 +50,34 @@ export default function UserContextProvider({ children }) {
   const isAdmin = () => {
     return user && user.role === "admin";
   };
+  // Listen for auth logout events from AxiosClient interceptor
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      _setUser(null);
+      _setToken(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("ACCESS_TOKEN");
+    };
+    
+    const handleAuthDisabled = (event) => {
+      _setUser(null);
+      _setToken(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("ACCESS_TOKEN");
+      if (event.detail?.message) {
+        setMessage(event.detail.message, 'error');
+      }
+    };
+    
+    window.addEventListener('auth:logout', handleAuthLogout);
+    window.addEventListener('auth:disabled', handleAuthDisabled);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+      window.removeEventListener('auth:disabled', handleAuthDisabled);
+    };
+  }, []);
+
   const refreshUser = async () => {
     if (token) {
       try {

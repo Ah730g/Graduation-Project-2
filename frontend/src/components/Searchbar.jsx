@@ -39,8 +39,10 @@ function Searchbar() {
     });
   };
 
+  const { language } = useLanguage();
+  
   return (
-    <div className="lg:pr-24">
+    <div className={`relative z-10 ${language === 'ar' ? 'lg:pr-24' : 'lg:pl-24'}`}>
       <div>
         <button
           className={`px-9 py-4 border dark:border-gray-600 border-r-0 rounded-tl-lg

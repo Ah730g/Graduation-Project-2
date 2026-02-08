@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AxiosClient from '../AxiosClient';
 import { useUserContext } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { usePopup } from '../contexts/PopupContext';
 
 function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
   const [user, setUser] = useState(null);
@@ -22,6 +23,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
   });
   const { setMessage } = useUserContext();
   const { t, translateRole, translateStatus } = useLanguage();
+  const { showToast } = usePopup();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,14 +86,33 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
     }
 
     AxiosClient.put(`/admin/users/${userId}`, updateData)
-      .then(() => {
-        setMessage(t('admin.update') + ' ' + t('common.success'));
+      .then((response) => {
+        const successMessage = t('admin.update') + ' ' + t('common.success');
+        setMessage(successMessage);
+        
+        // Show toast notification if status was changed to disabled
+        if (updateData.status === 'disabled' && response.data?.notification) {
+          const notification = response.data.notification;
+          let toastMessage = t('admin.accountDisabled') || 'Account disabled';
+          if (notification.reason) {
+            toastMessage += ': ' + notification.reason;
+          }
+          showToast(toastMessage, 'error');
+        } else if (updateData.status === 'active' && formData.status === 'disabled' && response.data?.notification) {
+          // Account was re-enabled
+          showToast(t('admin.accountEnabled') || 'Account enabled successfully', 'success');
+        } else {
+          showToast(successMessage, 'success');
+        }
+        
         onUpdate();
         fetchUserDetails();
       })
       .catch((error) => {
         console.error('Error updating user:', error);
-        setMessage(t('admin.errorUpdatingUser'), 'error');
+        const errorMessage = t('admin.errorUpdatingUser') || 'Error updating user';
+        setMessage(errorMessage, 'error');
+        showToast(errorMessage, 'error');
         setLoading(false);
       });
   };
@@ -116,16 +137,6 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[#444] dark:text-white">{t('admin.userDetails')}</h2>
           <div className="flex gap-2 items-center">
-            <button
-              onClick={() => {
-                onClose();
-                navigate('/admin/users');
-              }}
-              className="bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 text-[#444] dark:text-gray-900 font-semibold px-4 py-2 rounded-md transition text-sm"
-              title={t('admin.backToUsers') || 'Back to Users Management'}
-            >
-              {t('admin.backToUsers') || 'Back to Users'}
-            </button>
             <button
               onClick={onClose}
               className="text-2xl text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white transition duration-300 ease"
