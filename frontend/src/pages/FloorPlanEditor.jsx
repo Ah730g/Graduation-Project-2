@@ -2,6 +2,72 @@ import React, { useState, useRef } from "react";
 import AxiosClient from "../AxiosClient";
 import FloorPlanSVG from "./FloorPlanSVG";
 
+// ═══════════════════════════════════════════════
+// مساعدات منع التداخل والدفع (bounding box بالأمتار)
+// ═══════════════════════════════════════════════
+function rectOverlap(a, b) {
+  const aRight = a.x_m + (a.width_m || 0);
+  const aBottom = a.y_m + (a.height_m || 0);
+  const bRight = b.x_m + (b.width_m || 0);
+  const bBottom = b.y_m + (b.height_m || 0);
+  if (a.x_m >= bRight || aRight <= b.x_m || a.y_m >= bBottom || aBottom <= b.y_m) return false;
+  return true;
+}
+
+function applyPushCascade(rooms, draggedId, newX_m, newY_m, scale_px_per_m = 50) {
+  const scale = scale_px_per_m;
+  const dragged = rooms.find((r) => r.id === draggedId);
+  if (!dragged) return rooms;
+
+  const clampedX = Math.max(0, newX_m);
+  const clampedY = Math.max(0, newY_m);
+  const deltaX_m = clampedX - dragged.x_m;
+  const deltaY_m = clampedY - dragged.y_m;
+
+  const idToRoom = new Map(rooms.map((r) => [r.id, { ...r }]));
+  const currentPos = new Map();
+  rooms.forEach((r) => currentPos.set(r.id, { x_m: r.x_m, y_m: r.y_m }));
+
+  currentPos.set(draggedId, { x_m: clampedX, y_m: clampedY });
+  const movedIds = new Set([draggedId]);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const room of idToRoom.values()) {
+      if (movedIds.has(room.id)) continue;
+      const pos = currentPos.get(room.id);
+      const rectOther = { x_m: pos.x_m, y_m: pos.y_m, width_m: room.width_m, height_m: room.height_m };
+      for (const mid of movedIds) {
+        const mRoom = idToRoom.get(mid);
+        const mPos = currentPos.get(mid);
+        const rectMoved = { x_m: mPos.x_m, y_m: mPos.y_m, width_m: mRoom.width_m, height_m: mRoom.height_m };
+        if (rectOverlap(rectOther, rectMoved)) {
+          movedIds.add(room.id);
+          currentPos.set(room.id, {
+            x_m: room.x_m + deltaX_m,
+            y_m: room.y_m + deltaY_m,
+          });
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+
+  return rooms.map((room) => {
+    if (!movedIds.has(room.id)) return room;
+    const pos = currentPos.get(room.id);
+    return {
+      ...room,
+      x_m: pos.x_m,
+      y_m: pos.y_m,
+      x_px: Math.round(pos.x_m * scale),
+      y_px: Math.round(pos.y_m * scale),
+    };
+  });
+}
+
 export default function FloorPlanEditor({ initialLayout, title, onClose, originalResult = null, onLayoutUpdate = null }) {
   const [editableLayout, setEditableLayout] = useState(() => {
     // إنشاء نسخة عميقة من المخطط للتعديل
@@ -49,26 +115,46 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   const selectedRoom = editableLayout.rooms?.find((r) => r.id === selectedRoomId) || null;
 
   // ═══════════════════════════════════════════════
-  // 🖱️ معالجة السحب والإفلات
+  // 🖱️ معالجة السحب والإفلات (منع التداخل + دفع الغرف + تحديث الحدود)
   // ═══════════════════════════════════════════════
   const handleRoomDrag = (roomId, newX_m, newY_m) => {
     setEditableLayout((prev) => {
       const scale = prev.scale_px_per_m || 50;
-      const newLayout = { ...prev };
-      newLayout.rooms = prev.rooms.map((room) => {
-        if (room.id === roomId) {
-          return {
-            ...room,
-            x_m: Math.max(0, newX_m),
-            y_m: Math.max(0, newY_m),
-            x_px: Math.max(0, newX_m * scale),
-            y_px: Math.max(0, newY_m * scale),
-          };
+      const dragged = prev.rooms.find((r) => r.id === roomId);
+      if (!dragged) return prev;
+
+      const clampedNewX = Math.max(0, newX_m);
+      const clampedNewY = Math.max(0, newY_m);
+      const deltaX = clampedNewX - dragged.x_m;
+      const deltaY = clampedNewY - dragged.y_m;
+
+      let rooms = applyPushCascade(prev.rooms, roomId, newX_m, newY_m, scale);
+
+      // قفل السحب: إذا خرجت أي غرفة عن الحد الأيسر أو الأعلى، نحد الإزاحة بعامل s
+      let s_final = 1;
+      for (const room of rooms) {
+        if (room.x_m < 0 && deltaX !== 0) {
+          const origX = room.x_m - deltaX;
+          const s_x = -origX / deltaX;
+          if (deltaX < 0 && s_x < s_final) s_final = s_x;
         }
-        return room;
-      });
-      
-      // تحديث الأبعاد الكلية
+        if (room.y_m < 0 && deltaY !== 0) {
+          const origY = room.y_m - deltaY;
+          const s_y = -origY / deltaY;
+          if (deltaY < 0 && s_y < s_final) s_final = s_y;
+        }
+      }
+      s_final = Math.max(0, Math.min(1, s_final));
+
+      if (s_final < 1) {
+        const limitedX = dragged.x_m + s_final * deltaX;
+        const limitedY = dragged.y_m + s_final * deltaY;
+        rooms = applyPushCascade(prev.rooms, roomId, limitedX, limitedY, scale);
+      }
+
+      const newLayout = { ...prev, rooms };
+
+      // تحديث الأبعاد الكلية من كل الغرف
       let maxX = 0;
       let maxY = 0;
       newLayout.rooms.forEach((room) => {
@@ -79,7 +165,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
       newLayout.total_height_m = Math.round(maxY * 100) / 100;
       newLayout.total_width_px = Math.round(maxX * scale);
       newLayout.total_height_px = Math.round(maxY * scale);
-      
+
       return newLayout;
     });
   };

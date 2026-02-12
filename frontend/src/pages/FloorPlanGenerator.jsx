@@ -16,7 +16,6 @@ export default function FloorPlanGenerator({ onFloorPlanCreated = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
-  const [showAIResponse, setShowAIResponse] = useState(false);
   const [show3D, setShow3D] = useState(false);
   const svgContainerRef = useRef(null);
 
@@ -441,40 +440,6 @@ export default function FloorPlanGenerator({ onFloorPlanCreated = null }) {
           </div>
         )}
 
-        {/* عرض استجابة الـ AI للاختبار */}
-        {result && (
-          <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800">🤖 استجابة الـ AI (للاختبار)</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    const jsonString = JSON.stringify(result, null, 2);
-                    navigator.clipboard.writeText(jsonString);
-                    alert("تم نسخ الاستجابة إلى الحافظة!");
-                  }}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition"
-                >
-                  📋 نسخ JSON
-                </button>
-                <button
-                  onClick={() => setShowAIResponse(!showAIResponse)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition"
-                >
-                  {showAIResponse ? "⬆️ إخفاء" : "⬇️ عرض"}
-                </button>
-              </div>
-            </div>
-            
-            {showAIResponse && (
-              <div className="mt-4 border-2 border-gray-200 rounded-xl overflow-hidden">
-                <pre className="bg-gray-900 text-green-400 p-4 overflow-auto max-h-96 text-sm font-mono" style={{ direction: "ltr", textAlign: "left" }}>
-                  {JSON.stringify(result, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
