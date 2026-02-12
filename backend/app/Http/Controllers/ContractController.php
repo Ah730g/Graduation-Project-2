@@ -6,7 +6,9 @@ use App\Models\Contract;
 use App\Models\Post;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Knp\Snappy\Pdf as SnappyPdf;
 
 class ContractController extends Controller
 {
@@ -567,22 +569,49 @@ class ContractController extends Controller
         $ownerIdentity = $contract->post->user->identityVerifications->first() ?? null;
         $renterIdentity = $renterUser ? ($renterUser->identityVerifications->first() ?? null) : null;
 
+        $viewData = [
+            'contract' => $contract,
+            'ownerIdentity' => $ownerIdentity,
+            'renterIdentity' => $renterIdentity,
+            'pdf_engine' => config('contract-pdf.engine', 'dompdf'),
+        ];
+
+        $fileName = 'contract_' . $contract->id . '_' . date('Y-m-d') . '.pdf';
+
         try {
-            $pdf = Pdf::loadView('contracts.pdf', [
-                'contract' => $contract,
-                'ownerIdentity' => $ownerIdentity,
-                'renterIdentity' => $renterIdentity,
-            ]);
+            // استخدام Snappy (wkhtmltopdf) عند التفعيل: دعم أفضل للعربية و RTL و Arabic Shaping
+            if (config('contract-pdf.engine') === 'snappy') {
+                try {
+                    $binary = config('contract-pdf.wkhtmltopdf', 'wkhtmltopdf');
+                    $snappy = new SnappyPdf($binary);
+                    $html = View::make('contracts.pdf', $viewData)->render();
+                    $pdfOutput = $snappy->getOutputFromHtml($html, [
+                        'encoding' => 'UTF-8',
+                        'enable-local-file-access' => true,
+                    ]);
 
-            $fileName = 'contract_' . $contract->id . '_' . date('Y-m-d') . '.pdf';
+                    return response($pdfOutput, 200, [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                        'Content-Length' => strlen($pdfOutput),
+                    ]);
+                } catch (\Exception $snappyException) {
+                    \Log::warning('Contract PDF: Snappy failed, falling back to DomPDF', [
+                        'error' => $snappyException->getMessage(),
+                    ]);
+                    $viewData['pdf_engine'] = 'dompdf'; // لتفعيل التشكيل العربي في القالب
+                }
+            }
 
+            // DomPDF (أو fallback عند فشل Snappy)
+            $pdf = Pdf::loadView('contracts.pdf', $viewData);
             return $pdf->download($fileName);
         } catch (\Exception $e) {
             \Log::error('Error generating PDF for contract ' . $id, [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'message' => 'Error generating PDF',
                 'error' => $e->getMessage(),

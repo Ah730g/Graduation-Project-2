@@ -2,7 +2,7 @@ const translations = {
   en: {
     // Navbar
     navbar: {
-      siteName: 'SHAQA',
+      siteName: 'SHOQA',
       home: 'Home',
       about: 'Apartments',
       contact: 'Contact',

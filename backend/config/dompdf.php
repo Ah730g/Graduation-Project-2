@@ -175,11 +175,11 @@ return [
         /**
          * The default font family
          *
-         * Used if no suitable fonts can be found. This must exist in the font folder.
+         * Used if no suitable fonts can be found. DejaVu Sans supports Arabic/Unicode.
          *
          * @var string
          */
-        'default_font' => 'serif',
+        'default_font' => 'DejaVu Sans',
 
         /**
          * Image DPI setting

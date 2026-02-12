@@ -27,7 +27,7 @@ export default function LanguageProvider({ children }) {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
     // Update document title based on language
-    const siteName = translations[language]?.navbar?.siteName || 'SHAQA';
+    const siteName = translations[language]?.navbar?.siteName || 'SHOQA';
     document.title = siteName;
   }, [language]);
 
