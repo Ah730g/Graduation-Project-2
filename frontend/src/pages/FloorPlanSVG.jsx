@@ -42,9 +42,12 @@ export default function FloorPlanSVG({
 
   const titleHeight = title ? 60 : 0;
   const legendHeight = 140;
-  const scaleBarHeight = 50;
+  const scaleBarHeight = 70;
   const canvasWidth = Math.max(total_width_px + padding_px * 2, 900);
   const canvasHeight = total_height_px + padding_px * 2 + titleHeight + legendHeight + scaleBarHeight;
+
+  // المساحة الإجمالية للشقة (مجموع مساحات الغرف)
+  const totalAreaM2 = rooms.reduce((sum, r) => sum + (Number(r.area_m2) || 0), 0);
 
   // ═══════════════════════════════════════════════
   // 🎨 ألوان وأنماط الغرف
@@ -2059,6 +2062,17 @@ export default function FloorPlanSVG({
 
         {/* ═══════════ شريط المقياس ═══════════ */}
         <ScaleBar x={padding_px} y={canvasHeight - legendHeight - scaleBarHeight + 15} pixelsPerMeter={scale_px_per_m} />
+
+        {/* ═══════════ المساحة الإجمالية للشقة (تحت مقياس الرسم) ═══════════ */}
+        <text
+          x={padding_px}
+          y={canvasHeight - legendHeight - scaleBarHeight + 65}
+          fontSize="13"
+          fontWeight="bold"
+          fill="#1a237e"
+        >
+          مساحة الشقة الإجمالية: {totalAreaM2.toFixed(1)} م²
+        </text>
 
         {/* ═══════════ وسيلة الإيضاح ═══════════ */}
         <Legend x={padding_px + 320} y={canvasHeight - legendHeight - 5} />
