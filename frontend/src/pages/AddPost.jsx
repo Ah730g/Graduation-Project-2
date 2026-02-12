@@ -739,12 +739,12 @@ function AddPost() {
             
             {/* New Apartment Details Section */}
             <div className="apartment-details-section w-full border-t pt-4 mt-4">
-              <h3 className="font-bold text-lg mb-4">{t("addPost.apartmentDetails") || "Apartment Details"}</h3>
+              <h3 className="font-bold text-lg mb-4">{t("addPost.apartmentDetails") || "Apartment & Building Details"}</h3>
               
               <div className="flex flex-wrap gap-y-5 gap-x-2 justify-between items-center">
                 <div className="floor-number-item flex flex-col">
                   <label htmlFor="floor-number" className="font-semibold text-sm">
-                    {t("addPost.floorNumber") || "Floor Number"}
+                    {t("addPost.floorNumber") || "Floor Level in Building"}
                   </label>
                   <input
                     type="number"
@@ -757,7 +757,7 @@ function AddPost() {
                 
                 <div className="floor-condition-item flex flex-col">
                   <label htmlFor="floor-condition" className="font-semibold text-sm">
-                    {t("addPost.floorCondition") || "Floor Condition"}
+                    {t("addPost.floorCondition") || "Flooring Condition"}
                   </label>
                   <select
                     name="floor-condition"
@@ -765,7 +765,7 @@ function AddPost() {
                     defaultValue={postData?.floor_condition || postData?.Floor_Condition || ""}
                     className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
                   >
-                    <option value="">{t("addPost.selectOption") || "Select..."}</option>
+                    <option value="">{t("addPost.selectOption") || "Select an option"}</option>
                     <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
                     <option value="good">{t("addPost.good") || "Good"}</option>
                     <option value="fair">{t("addPost.fair") || "Fair"}</option>
@@ -775,7 +775,7 @@ function AddPost() {
                 
                 <div className="building-condition-item flex flex-col">
                   <label htmlFor="building-condition" className="font-semibold text-sm">
-                    {t("addPost.buildingCondition") || "Building Condition"}
+                    {t("addPost.buildingCondition") || "Building Overall Condition"}
                   </label>
                   <select
                     name="building-condition"
@@ -783,7 +783,7 @@ function AddPost() {
                     defaultValue={postData?.building_condition || postData?.Building_Condition || ""}
                     className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
                   >
-                    <option value="">{t("addPost.selectOption") || "Select..."}</option>
+                    <option value="">{t("addPost.selectOption") || "Select an option"}</option>
                     <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
                     <option value="good">{t("addPost.good") || "Good"}</option>
                     <option value="fair">{t("addPost.fair") || "Fair"}</option>
@@ -800,7 +800,7 @@ function AddPost() {
                       defaultChecked={postData?.has_elevator || postData?.Has_Elevator || false}
                       className="w-5 h-5"
                     />
-                    {t("addPost.hasElevator") || "Has Elevator"}
+                    {t("addPost.hasElevator") || "Elevator Available"}
                   </label>
                   
                   <label htmlFor="has-internet" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
@@ -811,7 +811,7 @@ function AddPost() {
                       defaultChecked={postData?.has_internet || postData?.Has_Internet || false}
                       className="w-5 h-5"
                     />
-                    {t("addPost.hasInternet") || "Has Internet"}
+                    {t("addPost.hasInternet") || "Internet Connection Available"}
                   </label>
                   
                   <label htmlFor="has-electricity" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
@@ -822,7 +822,7 @@ function AddPost() {
                       defaultChecked={postData?.has_electricity || postData?.Has_Electricity || false}
                       className="w-5 h-5"
                     />
-                    {t("addPost.hasElectricity") || "Has Electricity"}
+                    {t("addPost.hasElectricity") || "Electricity Available"}
                   </label>
                   
                   <label htmlFor="has-air-conditioning" className="font-semibold text-sm flex items-center gap-2 cursor-pointer">
@@ -833,7 +833,7 @@ function AddPost() {
                       defaultChecked={postData?.has_air_conditioning || postData?.Has_Air_Conditioning || false}
                       className="w-5 h-5"
                     />
-                    {t("addPost.hasAirConditioning") || "Has Air Conditioning"}
+                    {t("addPost.hasAirConditioning") || "Air Conditioning Available"}
                   </label>
                 </div>
               </div>
@@ -841,14 +841,14 @@ function AddPost() {
             
             {/* Floor Plan Section */}
             <div className="floor-plan-section w-full border-t pt-4 mt-4">
-              <h3 className="font-bold text-lg mb-4">📐 {t("addPost.floorPlan") || "Floor Plan"}</h3>
-              <p className="text-sm text-gray-600 mb-4">{t("addPost.floorPlanDesc") || "Create a floor plan for your apartment to help renters visualize the space."}</p>
+              <h3 className="font-bold text-lg mb-4">📐 {t("addPost.floorPlan") || "Apartment Floor Plan"}</h3>
+              <p className="text-sm text-gray-600 mb-4">{t("addPost.floorPlanDesc") || "Create a visual floor plan to help renters understand the space layout."}</p>
               
               {floorPlanData ? (
                 <div className="mb-4 p-4 bg-green-50 rounded-md border border-green-200">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-semibold text-green-800">✅ {t("addPost.floorPlanCreated") || "Floor plan created"}</p>
+                      <p className="font-semibold text-green-800">✅ {t("addPost.floorPlanCreated") || "Floor plan has been created"}</p>
                       {floorPlanTitle && <p className="text-sm text-green-600">{floorPlanTitle}</p>}
                     </div>
                     <button
@@ -872,7 +872,7 @@ function AddPost() {
                       }}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
                     >
-                      {t("addPost.editFloorPlan") || "Edit"}
+                      {t("addPost.editFloorPlan") || "Edit Floor Plan"}
                     </button>
                   </div>
                   <div className="mt-3 max-h-64 overflow-auto border border-green-300 rounded p-2 bg-white">
@@ -887,11 +887,11 @@ function AddPost() {
                     onClick={() => {
                       setFloorPlanData(null);
                       setFloorPlanTitle("");
-                      showToast(t("addPost.floorPlanRemoved") || "Floor plan removed", "success");
+                      showToast(t("addPost.floorPlanRemoved") || "Floor plan has been removed", "success");
                     }}
                     className="mt-2 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition text-sm"
                   >
-                    {t("addPost.removeFloorPlan") || "Remove"}
+                    {t("addPost.removeFloorPlan") || "Remove Floor Plan"}
                   </button>
                 </div>
               ) : (
@@ -910,7 +910,7 @@ function AddPost() {
                     }}
                     className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition font-medium"
                   >
-                    🤖 {t("addPost.generateFloorPlan") || "Generate with AI"}
+                    🤖 {t("addPost.generateFloorPlan") || "Generate Floor Plan with AI"}
                   </button>
                   <button
                     type="button"
@@ -926,7 +926,7 @@ function AddPost() {
                     }}
                     className="px-6 py-3 bg-yellow-300 text-[#444] rounded-md hover:bg-yellow-400 transition font-medium"
                   >
-                    ✏️ {t("addPost.createManually") || "Create Manually"}
+                    ✏️ {t("addPost.createManually") || "Create Floor Plan Manually"}
                   </button>
                 </div>
               )}
