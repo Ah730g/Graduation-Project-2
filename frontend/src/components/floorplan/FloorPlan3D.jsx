@@ -38,7 +38,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-export default function FloorPlan3D({ layout, onClose, onRoomClick, onRoomEdit, onRoomDelete }) {
+export default function FloorPlan3D({ layout, onClose, onRoomClick, onRoomEdit, onRoomDelete, fullHeight = false }) {
   const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -85,7 +85,10 @@ export default function FloorPlan3D({ layout, onClose, onRoomClick, onRoomEdit, 
 
   return (
     <ErrorBoundary>
-      <div ref={containerRef} className="relative w-full h-[600px] bg-gray-900 rounded-xl overflow-hidden">
+      <div
+        ref={containerRef}
+        className={`relative w-full bg-gray-900 overflow-hidden ${fullHeight ? "h-full min-h-0" : "h-[600px] rounded-xl"}`}
+      >
         {onClose && (
           <button
             onClick={onClose}

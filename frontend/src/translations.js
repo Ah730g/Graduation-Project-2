@@ -873,7 +873,7 @@ const translations = {
       hasInternet: 'يوجد اتصال إنترنت',
       hasElectricity: 'يوجد كهرباء',
       hasAirConditioning: 'يوجد تكييف هواء',
-      floorPlan: 'المخطط الأرضي للشقة',
+      floorPlan: 'المخطط  للشقة',
       floorPlanDesc: 'أنشئ مخططاً أرضياً لمساعدة المستأجرين على فهم تخطيط الشقة.',
       floorPlanCreated: 'تم إنشاء المخطط الأرضي',
       floorPlanRemoved: 'تم إزالة المخطط الأرضي',

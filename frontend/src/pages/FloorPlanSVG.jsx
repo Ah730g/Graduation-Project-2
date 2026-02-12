@@ -7,6 +7,7 @@ export default function FloorPlanSVG({
   selectedRoomId = null, 
   onRoomClick = null, 
   onRoomDrag = null,
+  onRoomDragStart = null,
   selectedFurnitureId = null,
   onFurnitureDrag = null,
   onFurnitureClick = null,
@@ -1835,6 +1836,7 @@ export default function FloorPlanSVG({
                 const dy = Math.abs(moveEvent.clientY - e.clientY);
                 if (dx < 5 && dy < 5) return;
                 isDragging = true;
+                if (onRoomDragStart) onRoomDragStart(room.id);
               }
 
               svgPoint.x = moveEvent.clientX;

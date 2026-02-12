@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import AxiosClient from "../AxiosClient";
 import { useUserContext } from "../contexts/UserContext";
 import UploadWidget from "../components/UploadWidget";
@@ -9,6 +10,8 @@ import FloorPlanGenerator from "./FloorPlanGenerator";
 import FloorPlanManualBuilder from "./FloorPlanManualBuilder";
 import FloorPlanEditor from "./FloorPlanEditor";
 import FloorPlanSVG from "./FloorPlanSVG";
+import FloorPlan3D from "../components/floorplan/FloorPlan3D";
+import { convert2DTo3D } from "../lib/floorplan3d/converter";
 
 function AddPost() {
   const [properties, setProperties] = useState(null);
@@ -33,6 +36,10 @@ function AddPost() {
   const [floorPlanData, setFloorPlanData] = useState(null);
   const [showFloorPlanModal, setShowFloorPlanModal] = useState(false);
   const [floorPlanMode, setFloorPlanMode] = useState(null); // 'generate', 'manual', 'editor'
+  const [showFullScreen2D, setShowFullScreen2D] = useState(false);
+  const [showFullScreen3D, setShowFullScreen3D] = useState(false);
+  const [fullScreen2DScale, setFullScreen2DScale] = useState(1);
+  const fullScreen2DContainerRef = useRef(null);
   const [floorPlanTitle, setFloorPlanTitle] = useState("");
 
   useEffect(() => {
@@ -124,6 +131,70 @@ function AddPost() {
       setProperties(response.data);
     });
   }, [user, refreshUser, navigate, searchParams, showToast, t]);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowFullScreen2D(false);
+        setShowFullScreen3D(false);
+      }
+    };
+    if (showFullScreen2D || showFullScreen3D) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleEsc);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleEsc);
+      };
+    }
+  }, [showFullScreen2D, showFullScreen3D]);
+
+  const floorPlanLayout = useMemo(() => {
+    if (!floorPlanData) return null;
+    let l = floorPlanData.layout || floorPlanData;
+    if (l && l.layout) l = l.layout;
+    return l;
+  }, [floorPlanData]);
+
+  const floorPlanLayout3D = useMemo(() => {
+    if (!floorPlanLayout || !floorPlanLayout.rooms?.length) return floorPlanLayout;
+    if (floorPlanLayout.rooms[0]?.geometry) return floorPlanLayout;
+    try {
+      return convert2DTo3D(floorPlanLayout);
+    } catch (e) {
+      return floorPlanLayout;
+    }
+  }, [floorPlanLayout]);
+
+  useEffect(() => {
+    if (!showFullScreen2D || !floorPlanLayout) return;
+    const padding = 300;
+    const legendScaleBar = 190;
+    const contentW = Math.max((floorPlanLayout.total_width_px || 0) + padding, 900);
+    const contentH = (floorPlanLayout.total_height_px || 0) + padding + legendScaleBar;
+    let ro = null;
+    const updateScale = () => {
+      const el = fullScreen2DContainerRef.current;
+      if (!el || !contentW || !contentH) return;
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const scale = Math.min(w / contentW, h / contentH, 2) || 1;
+      setFullScreen2DScale(Math.max(0.25, scale));
+    };
+    const t = setTimeout(() => {
+      updateScale();
+      const el = fullScreen2DContainerRef.current;
+      if (el) {
+        ro = new ResizeObserver(updateScale);
+        ro.observe(el);
+      }
+    }, 50);
+    return () => {
+      clearTimeout(t);
+      ro?.disconnect();
+    };
+  }, [showFullScreen2D, floorPlanLayout]);
+
   const buildPayload = (formData, isDraft = false) => {
     const inputs = Object.fromEntries(formData);
     
@@ -846,34 +917,58 @@ function AddPost() {
               
               {floorPlanData ? (
                 <div className="mb-4 p-4 bg-green-50 rounded-md border border-green-200">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                     <div>
                       <p className="font-semibold text-green-800">✅ {t("addPost.floorPlanCreated") || "Floor plan has been created"}</p>
                       {floorPlanTitle && <p className="text-sm text-green-600">{floorPlanTitle}</p>}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // حفظ بيانات المخطط الحالي للعودة
-                        localStorage.setItem('floorPlanReturnUrl', '/post/add');
-                        localStorage.setItem('floorPlanReturnData', JSON.stringify({
-                          postId: postId,
-                          isEditing: isEditing,
-                          existingFloorPlan: floorPlanData
-                        }));
-                        // حفظ المخطط الحالي للتحرير
-                        localStorage.setItem('floorPlanToEdit', JSON.stringify({
-                          layout: floorPlanData.layout || floorPlanData,
-                          title: floorPlanTitle,
-                          originalResult: floorPlanData
-                        }));
-                        // الانتقال إلى صفحة التحرير
-                        navigate('/floor-plan?returnTo=addPost&mode=edit');
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
-                    >
-                      {t("addPost.editFloorPlan") || "Edit Floor Plan"}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFullScreen2D(true)}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-sm flex items-center gap-1"
+                        title={language === "ar" ? "عرض المخطط 2D ملء الشاشة" : "View 2D plan fullscreen"}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        {language === "ar" ? "المخطط 2D ملء الشاشة" : "2D fullscreen"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowFullScreen3D(true)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition text-sm flex items-center gap-1"
+                        title={language === "ar" ? "عرض المخطط 3D ملء الشاشة" : "View 3D plan fullscreen"}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8 4-8-4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        {language === "ar" ? "المخطط 3D ملء الشاشة" : "3D fullscreen"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // حفظ بيانات المخطط الحالي للعودة
+                          localStorage.setItem('floorPlanReturnUrl', '/post/add');
+                          localStorage.setItem('floorPlanReturnData', JSON.stringify({
+                            postId: postId,
+                            isEditing: isEditing,
+                            existingFloorPlan: floorPlanData
+                          }));
+                          // حفظ المخطط الحالي للتحرير
+                          localStorage.setItem('floorPlanToEdit', JSON.stringify({
+                            layout: floorPlanData.layout || floorPlanData,
+                            title: floorPlanTitle,
+                            originalResult: floorPlanData
+                          }));
+                          // الانتقال إلى صفحة التحرير
+                          navigate('/floor-plan?returnTo=addPost&mode=edit');
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+                      >
+                        {t("addPost.editFloorPlan") || "Edit Floor Plan"}
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-3 max-h-64 overflow-auto border border-green-300 rounded p-2 bg-white">
                     <FloorPlanSVG 
@@ -894,7 +989,91 @@ function AddPost() {
                     {t("addPost.removeFloorPlan") || "Remove Floor Plan"}
                   </button>
                 </div>
-              ) : (
+              ) : null}
+              {showFullScreen2D && floorPlanLayout && createPortal(
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center"
+                  onClick={() => setShowFullScreen2D(false)}
+                  style={{
+                    direction: language === "ar" ? "rtl" : "ltr",
+                    zIndex: 99999,
+                    width: "100vw",
+                    height: "100vh",
+                  }}
+                >
+                  <div
+                    className="bg-white w-full h-full overflow-hidden flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ width: "100vw", height: "100vh", maxWidth: "100vw", maxHeight: "100vh" }}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shrink-0">
+                      <h2 className="text-2xl font-bold text-white">
+                        {language === "ar" ? "المخطط 2D - " : "2D Plan - "}{floorPlanTitle}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setShowFullScreen2D(false)}
+                        className="text-white hover:bg-white/20 rounded-lg px-4 py-2 transition flex items-center gap-2 font-medium"
+                      >
+                        <span>{language === "ar" ? "إغلاق (ESC)" : "Close (ESC)"}</span>
+                      </button>
+                    </div>
+                    <div
+                      ref={fullScreen2DContainerRef}
+                      className="flex-1 min-h-0 overflow-auto bg-gray-50 flex items-start justify-center p-4"
+                    >
+                      <div
+                        style={{
+                          transform: `scale(${fullScreen2DScale})`,
+                          transformOrigin: "top center",
+                          width: Math.max((floorPlanLayout.total_width_px || 0) + 300, 900),
+                          height: (floorPlanLayout.total_height_px || 0) + 490,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FloorPlanSVG layout={floorPlanLayout} title={null} interactive={false} />
+                      </div>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+              {showFullScreen3D && floorPlanLayout3D && createPortal(
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center"
+                  onClick={() => setShowFullScreen3D(false)}
+                  style={{
+                    direction: language === "ar" ? "rtl" : "ltr",
+                    zIndex: 99999,
+                    width: "100vw",
+                    height: "100vh",
+                  }}
+                >
+                  <div
+                    className="bg-white w-full h-full overflow-hidden flex flex-col"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ width: "100vw", height: "100vh", maxWidth: "100vw", maxHeight: "100vh" }}
+                  >
+                    <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shrink-0">
+                      <h2 className="text-2xl font-bold text-white">
+                        {language === "ar" ? "المخطط 3D - " : "3D Plan - "}{floorPlanTitle}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setShowFullScreen3D(false)}
+                        className="text-white hover:bg-white/20 rounded-lg px-4 py-2 transition flex items-center gap-2 font-medium"
+                      >
+                        <span>{language === "ar" ? "إغلاق (ESC)" : "Close (ESC)"}</span>
+                      </button>
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-hidden bg-gray-900 w-full" style={{ minHeight: "calc(100vh - 4rem)" }}>
+                      <FloorPlan3D layout={floorPlanLayout3D} fullHeight />
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+              {!floorPlanData && (
                 <div className="flex flex-wrap gap-3 mb-4">
                   <button
                     type="button"

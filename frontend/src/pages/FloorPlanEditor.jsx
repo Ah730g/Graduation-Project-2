@@ -91,6 +91,22 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   const [showDoorModal, setShowDoorModal] = useState(false);
   const [showWindowModal, setShowWindowModal] = useState(false);
   const svgContainerRef = useRef(null);
+  const [history, setHistory] = useState([]);
+
+  const pushToHistory = () => {
+    if (!editableLayout) return;
+    setHistory((h) => {
+      const next = [...h, JSON.parse(JSON.stringify(editableLayout))];
+      return next.slice(-3);
+    });
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setEditableLayout(JSON.parse(JSON.stringify(prev)));
+    setHistory((h) => h.slice(0, -1));
+  };
 
   // التحقق من وجود المخطط
   if (!editableLayout || !editableLayout.rooms) {
@@ -261,6 +277,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // ➕ إضافة غرفة جديدة
   // ═══════════════════════════════════════════════
   const handleAddRoom = () => {
+    pushToHistory();
     const scale = editableLayout.scale_px_per_m || 50;
     const newRoom = {
       id: `room-${Date.now()}`,
@@ -295,7 +312,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // ═══════════════════════════════════════════════
   const handleDeleteRoom = () => {
     if (!selectedRoomId) return;
-    
+    pushToHistory();
     setEditableLayout((prev) => {
       const newRooms = prev.rooms.filter((r) => r.id !== selectedRoomId);
       
@@ -326,7 +343,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // ═══════════════════════════════════════════════
   const handleUpdateRoom = (updates) => {
     if (!selectedRoomId) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       const scale = prev.scale_px_per_m || 50;
       const newRooms = prev.rooms.map((room) => {
@@ -544,7 +561,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
 
     const furniture = furnitureTypes.find((f) => f.type === furnitureType);
     if (!furniture) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       return {
         ...prev,
@@ -574,7 +591,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // حذف قطعة أثاث
   const handleDeleteFurniture = (furnitureId) => {
     if (!selectedRoomId) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       return {
         ...prev,
@@ -642,7 +659,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
   // معالجة تغيير حجم الأثاث
   const handleFurnitureResize = (furnitureId, newX, newY, newWidth, newHeight) => {
     if (!selectedRoomId) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       return {
         ...prev,
@@ -700,7 +717,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
     if (!selectedRoomId) return;
     const room = editableLayout.rooms.find((r) => r.id === selectedRoomId);
     if (!room || !room.doors || !room.doors[doorIndex]) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       return {
         ...prev,
@@ -725,7 +742,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
     if (!selectedRoomId) return;
     const room = editableLayout.rooms.find((r) => r.id === selectedRoomId);
     if (!room || !room.windows || !room.windows[windowIndex]) return;
-
+    pushToHistory();
     setEditableLayout((prev) => {
       return {
         ...prev,
@@ -849,6 +866,18 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
               }`}
             >
               🗑️ حذف الغرفة المحددة
+            </button>
+            <button
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition ${
+                history.length > 0
+                  ? "bg-gray-600 hover:bg-gray-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+              title={history.length > 0 ? `تراجع (${history.length})` : "تراجع"}
+            >
+              ↩ تراجع {history.length > 0 ? `(${history.length})` : ""}
             </button>
             <button
               onClick={handleExportPNG}
@@ -1375,6 +1404,7 @@ export default function FloorPlanEditor({ initialLayout, title, onClose, origina
                   selectedRoomId={selectedRoomId}
                   onRoomClick={handleRoomClick}
                   onRoomDrag={handleRoomDrag}
+                  onRoomDragStart={pushToHistory}
                   selectedFurnitureId={selectedFurnitureId}
                   onFurnitureDrag={handleFurnitureDrag}
                   onFurnitureClick={handleFurnitureClick}
