@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AdminTable from '../components/AdminTable';
+import AdminPagination, { PER_PAGE } from '../components/AdminPagination';
 import AxiosClient from '../AxiosClient';
 import { useUserContext } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,13 +12,30 @@ function RentalRequestsManagement() {
   const [searchParams] = useSearchParams();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const { setMessage } = useUserContext();
   const { showConfirm } = usePopup();
   const highlightedId = searchParams.get('requestId');
+  const [resolvedHighlightPage, setResolvedHighlightPage] = useState(!searchParams.get('requestId'));
 
   useEffect(() => {
+    if (!highlightedId) {
+      setResolvedHighlightPage(true);
+      return;
+    }
+    AxiosClient.get(`/admin/rental-requests/page-for-id/${highlightedId}`, { params: { per_page: PER_PAGE } })
+      .then((r) => {
+        setPage(r.data.page);
+        setResolvedHighlightPage(true);
+      })
+      .catch(() => setResolvedHighlightPage(true));
+  }, [highlightedId]);
+
+  useEffect(() => {
+    if (!resolvedHighlightPage) return;
     fetchRequests();
-  }, []);
+  }, [page, resolvedHighlightPage]);
 
   useEffect(() => {
     if (highlightedId && requests.length > 0) {
@@ -32,9 +50,15 @@ function RentalRequestsManagement() {
 
   const fetchRequests = () => {
     setLoading(true);
-    AxiosClient.get('/admin/rental-requests')
+    AxiosClient.get('/admin/rental-requests', { params: { page, per_page: PER_PAGE } })
       .then((response) => {
-        setRequests(response.data.data || []);
+        const res = response.data;
+        setRequests(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -82,12 +106,12 @@ function RentalRequestsManagement() {
       label: t('admin.status'),
       render: (value) => {
         const statusColors = {
-          pending: 'bg-yellow-200',
-          approved: 'bg-green-200',
-          rejected: 'bg-red-200',
+          pending: 'bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200',
+          approved: 'bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200',
+          rejected: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-200',
         };
         return (
-          <span className={`px-2 py-1 rounded-md text-sm ${statusColors[value] || 'bg-gray-200'}`}>
+          <span className={`px-2 py-1 rounded-lg text-sm ${statusColors[value] || 'bg-stone-200 dark:bg-stone-600 text-stone-800 dark:text-stone-200'}`}>
             {translateStatus(value)}
           </span>
         );
@@ -148,14 +172,21 @@ function RentalRequestsManagement() {
   };
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">{t('admin.rentalRequests')}</h1>
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">{t('admin.rentalRequests')}</h1>
       <AdminTable 
         columns={columns} 
         data={requests} 
         actions={actions} 
         loading={loading}
         highlightedRowId={highlightedId}
+      />
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
       />
     </div>
   );

@@ -62,14 +62,14 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-stone-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-[#444] dark:text-white">
             {t('rating.rateUser') || 'Rate User'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-stone-400 dark:hover:text-stone-200"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -78,8 +78,8 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
         </div>
 
         {otherParty && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-stone-700 rounded-md">
+            <p className="text-sm text-gray-600 dark:text-stone-300 mb-1">
               {t('rating.ratingFor') || 'Rating for'}
             </p>
             <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[#444] dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[#444] dark:text-stone-300 mb-2">
               {t('rating.rating') || 'Rating'} *
             </label>
             <div className="flex gap-2">
@@ -113,7 +113,7 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
                     className={`w-8 h-8 ${
                       star <= rating
                         ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-gray-300 dark:text-gray-600 fill-none'
+                        : 'text-gray-300 dark:text-stone-500 fill-none'
                     }`}
                     viewBox="0 0 24 24"
                     fill="currentColor"
@@ -125,25 +125,25 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
               {rating}/5 {t('rating.stars') || 'stars'}
             </p>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[#444] dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[#444] dark:text-stone-300 mb-2">
               {t('rating.comment') || 'Comment'} *
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:bg-stone-700 dark:text-white"
               placeholder={t('rating.commentPlaceholder') || 'Share your experience...'}
               required
               maxLength={1000}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
               {comment.length}/1000 {t('rating.characters') || 'characters'}
             </p>
           </div>
@@ -158,7 +158,7 @@ function RatingModal({ isOpen, onClose, contract, otherParty, onSuccess }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-[#444] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md text-[#444] dark:text-white hover:bg-gray-100 dark:hover:bg-stone-700 transition"
             >
               {t('admin.cancel') || 'Cancel'}
             </button>

@@ -11,7 +11,7 @@ import FloorPlanDisplay from '../components/FloorPlanDisplay';
 
 function EstateInfo() {
   const postDetails = useLoaderData();
-  const { token, user, setMessage, message, setMessageStatus, messageStatus } =
+  const { token, user, refreshUser, setMessage, message, setMessageStatus, messageStatus } =
     useUserContext();
   const [isSaved, setIsSaved] = useState(false);
   const [bookingRequested, setBookingRequested] = useState(false);
@@ -34,20 +34,27 @@ function EstateInfo() {
     }
   }, [availableDurations]);
 
+  // Refresh user data on mount to get latest identity_status (e.g. after admin approves verification)
+  useEffect(() => {
+    if (token && refreshUser) {
+      refreshUser();
+    }
+  }, [token]);
+
   useEffect(() => {
     if (token) {
       setLoading(true);
       AxiosClient.get('/is-post-saved', {
         params: {
-          user_id: user.id,
+          user_id: user?.id,
           post_id: postDetails.post.id,
         },
       }).then((response) => {
         setIsSaved(response.data.saved);
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
     }
-  }, []);
+  }, [token, user?.id]);
 
   const handleSave = () => {
     if (!token) navigate('/login');
@@ -89,6 +96,17 @@ function EstateInfo() {
   const handleRequestBooking = async () => {
     if (!token) {
       navigate('/login');
+      return;
+    }
+
+    // Refresh user to get latest identity_status (in case admin just approved)
+    const latestUser = refreshUser ? await refreshUser() : user;
+
+    // Require identity verification for renters
+    const identityStatus = latestUser?.identity_status ?? user?.identity_status;
+    if (identityStatus !== 'approved') {
+      showToast(t('booking.identityVerificationRequired') || 'Please verify your identity before requesting rental', 'error');
+      navigate('/identity-verification');
       return;
     }
 
@@ -140,7 +158,11 @@ function EstateInfo() {
         })
         .catch((error) => {
           console.error('Error submitting booking request:', error);
-          showToast(error.response?.data?.message || t('booking.errorSubmitting') || 'Error submitting request', 'error');
+          const msg = error.response?.data?.message || t('booking.errorSubmitting') || 'Error submitting request';
+          showToast(msg, 'error');
+          if (error.response?.status === 403 && msg?.includes('Identity verification')) {
+            navigate('/identity-verification');
+          }
           setLoading(false);
         });
     }
@@ -148,7 +170,7 @@ function EstateInfo() {
   return (
     <div
       className="relative px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
-     lg:flex lg:justify-between min-h-[calc(100vh-100px)] py-5"
+     lg:flex lg:justify-between min-h-[calc(100vh-100px)] py-5 dark:bg-stone-900"
     >
       {loading ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -167,18 +189,18 @@ function EstateInfo() {
             )}
             <div className="flex justify-between items-center">
               <div className="flex flex-col gap-4">
-                <h2 className="font-bold text-3xl">{postDetails.post.Title}</h2>
-                <span className="flex text-sm items-center gap-1 text-[#444]">
+                <h2 className="font-bold text-3xl text-[#444] dark:text-stone-100">{postDetails.post.Title}</h2>
+                <span className="flex text-sm items-center gap-1 text-[#444] dark:text-stone-300">
                   <img src="/public/pin.png" alt="" className="w-4" />
                   {postDetails.post.Address}
                 </span>
-                <span className="bg-yellow-100 p-1 text-xl w-fit rounded-md font-light">
+                <span className="bg-yellow-100 dark:bg-stone-800 dark:border dark:border-yellow-400/50 p-1 text-xl w-fit rounded-md font-light text-[#444] dark:text-stone-200">
                   $ {postDetails.post.Price}
                 </span>
               </div>
               <div
-                className="user-info py-3 px-8 bg-yellow-100 flex flex-col gap-3
-          justify-center items-center rounded-md"
+                className="user-info py-3 px-8 bg-yellow-100 dark:bg-stone-800 dark:border dark:border-stone-600 flex flex-col gap-3
+          justify-center items-center rounded-md text-[#444] dark:text-stone-200"
               >
                 <img
                   src={postDetails.user.avatar}
@@ -187,29 +209,29 @@ function EstateInfo() {
                 />
                 <span className="font-semibold">{postDetails.user.name}</span>
                 {postDetails.user.reputation && postDetails.user.reputation.total_reviews > 0 && (
-                  <div className="flex flex-col items-center gap-1 mt-2 pt-2 border-t border-gray-300 w-full">
+                  <div className="flex flex-col items-center gap-1 mt-2 pt-2 border-t border-gray-300 dark:border-stone-600 w-full">
                     <div className="flex items-center gap-1">
                       <span className="text-yellow-500">⭐</span>
                       <span className="font-semibold text-sm">
                         {postDetails.user.reputation.average_rating.toFixed(1)}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-600 dark:text-stone-400">
                       ({postDetails.user.reputation.total_reviews} {t('rating.reviews') || 'reviews'})
                     </span>
                   </div>
                 )}
               </div>
             </div>
-            <p className="mt-5 leading-5 text-sm">
+            <p className="mt-5 leading-5 text-sm text-[#444] dark:text-stone-300">
               {postDetails.post.Description}
             </p>
 
             {/* Floor Plan Section - Under Images */}
             {postDetails.post?.floor_plan_data && (
-              <div className="mt-6 border-t pt-6">
-                <h2 className="font-bold text-2xl mb-4">{t('apartments.floorPlan') || 'Floor Plan'}</h2>
-                <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="mt-6 border-t border-stone-200 dark:border-stone-700 pt-6">
+                <h2 className="font-bold text-2xl mb-4 text-[#444] dark:text-stone-100">{t('apartments.floorPlan') || 'Floor Plan'}</h2>
+                <div className="bg-white dark:bg-stone-800 rounded-lg p-4 shadow-sm border border-transparent dark:border-stone-600">
                   <FloorPlanDisplay 
                     floorPlanData={postDetails.post.floor_plan_data}
                     show3D={true}
@@ -223,10 +245,10 @@ function EstateInfo() {
               </div>
             )}
           </div>
-          <div className="flex-1 bg-[#fcf5f3] px-5 max-md:mb-5 max-md:py-5 overflow-y-auto max-h-[calc(100vh-120px)]">
+          <div className="flex-1 bg-[#fcf5f3] dark:bg-stone-800/50 px-5 max-md:mb-5 max-md:py-5 overflow-y-auto max-h-[calc(100vh-120px)]">
             <div className="flex flex-col gap-4 pb-4">
-              <h2 className="font-bold">General</h2>
-              <div className="bg-white rounded-md px-3 py-2 flex flex-col gap-3">
+              <h2 className="font-bold text-[#444] dark:text-stone-100">General</h2>
+              <div className="bg-white dark:bg-stone-800 rounded-md px-3 py-2 flex flex-col gap-3 border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                 <div className="flex gap-2 items-center">
                   <img src="/public/utility.png" alt="" className="w-6" />
                   <div>
@@ -248,25 +270,25 @@ function EstateInfo() {
                 <div className="flex gap-2 items-center">
                   <img src="/public/fee.png" alt="" className="w-6" />
                   <div>
-                    <p className="font-bold -mb-1">Property Fees</p>
+                    <p className="font-bold -mb-1">Contact Phone</p>
                     <span className="text-sm">
-                      Must have jx the rent in totoal house hold income
+                      {postDetails.post.income_policy || postDetails.post.Income_Policy || '—'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <h2 className="font-bold">Room Sizes</h2>
+              <h2 className="font-bold text-[#444] dark:text-stone-100">Room Sizes</h2>
               <div className="flex justify-between">
-                <div className="bg-white p-2 rounded-sm flex gap-2">
+                <div className="bg-white dark:bg-stone-800 p-2 rounded-sm flex gap-2 border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                   <img src="/public/size.png" alt="" className="w-6" />
                   <span>{postDetails.post.total_size}</span>
                 </div>
-                <div className="bg-white p-2 rounded-sm flex gap-2">
+                <div className="bg-white dark:bg-stone-800 p-2 rounded-sm flex gap-2 border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                   <img src="/public/bed.png" alt="" className="w-6" />
                   <span>{postDetails.post.Bedrooms} bed</span>
                 </div>
-                <div className="bg-white p-2 rounded-sm flex gap-2">
+                <div className="bg-white dark:bg-stone-800 p-2 rounded-sm flex gap-2 border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                   <img src="/public/bath.png" alt="" className="w-6" />
                   <span>{postDetails.post.Bathrooms} bathroom</span>
                 </div>
@@ -281,8 +303,8 @@ function EstateInfo() {
                 postDetails.post.has_air_conditioning !== null && postDetails.post.has_air_conditioning !== undefined || 
                 postDetails.post.building_condition) && (
                 <>
-                  <h2 className="font-bold">{t('apartments.apartmentDetails') || 'Apartment Details'}</h2>
-                  <div className="bg-white rounded-md px-3 py-2 flex flex-col gap-3">
+                  <h2 className="font-bold text-[#444] dark:text-stone-100">{t('apartments.apartmentDetails') || 'Apartment Details'}</h2>
+                  <div className="bg-white dark:bg-stone-800 rounded-md px-3 py-2 flex flex-col gap-3 border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                     {postDetails.post.floor_number && (
                       <div className="flex gap-2 items-center">
                         <img src="/public/size.png" alt="" className="w-6" />
@@ -328,7 +350,7 @@ function EstateInfo() {
                     {(postDetails.post.has_internet !== null && postDetails.post.has_internet !== undefined || 
                       postDetails.post.has_electricity !== null && postDetails.post.has_electricity !== undefined || 
                       postDetails.post.has_air_conditioning !== null && postDetails.post.has_air_conditioning !== undefined) && (
-                      <div className="flex gap-4 flex-wrap pt-2 border-t border-gray-200">
+                      <div className="flex gap-4 flex-wrap pt-2 border-t border-gray-200 dark:border-stone-600">
                         {postDetails.post.has_internet !== null && postDetails.post.has_internet !== undefined && postDetails.post.has_internet && (
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full flex items-center justify-center bg-green-100">
@@ -367,8 +389,8 @@ function EstateInfo() {
                 </>
               )}
 
-              <h2 className="font-bold">Nearby Places</h2>
-              <div className="bg-white rounded-md px-3 py-2 flex justify-between">
+              <h2 className="font-bold text-[#444] dark:text-stone-100">Nearby Places</h2>
+              <div className="bg-white dark:bg-stone-800 rounded-md px-3 py-2 flex justify-between border border-transparent dark:border-stone-600 text-[#444] dark:text-stone-200">
                 <div className="flex gap-2 items-center">
                   <img src="/public/school.png" alt="" className="w-6" />
                   <div>
@@ -396,8 +418,8 @@ function EstateInfo() {
 
               {/* Available Rental Durations */}
               {availableDurationTypes.length > 0 && (
-                <div className="border-t pt-4 mt-4">
-                  <h2 className="font-bold mb-3">{t('booking.availableDurations') || 'Available Rental Durations'}</h2>
+                <div className="border-t border-stone-200 dark:border-stone-700 pt-4 mt-4">
+                  <h2 className="font-bold mb-3 text-[#444] dark:text-stone-100">{t('booking.availableDurations') || 'Available Rental Durations'}</h2>
                   <div className="flex flex-wrap gap-3">
                     {availableDurations.map((dp) => {
                       const labels = {
@@ -407,7 +429,7 @@ function EstateInfo() {
                         year: t('booking.yearly') || 'Yearly',
                       };
                       return (
-                        <div key={dp.duration_type} className="bg-yellow-100 px-4 py-2 rounded-md">
+                        <div key={dp.duration_type} className="bg-yellow-100 dark:bg-stone-800 dark:border dark:border-yellow-400/50 px-4 py-2 rounded-md text-[#444] dark:text-stone-200">
                           <span className="font-semibold capitalize">{labels[dp.duration_type] || dp.duration_type}: </span>
                           <span className="text-green-600 font-bold">${dp.price}</span>
                         </div>
@@ -417,7 +439,7 @@ function EstateInfo() {
                 </div>
               )}
 
-              <h2 className="font-bold">Location</h2>
+              <h2 className="font-bold text-[#444] dark:text-stone-100">Location</h2>
               <div className="w-full h-44">
                 <Map data={[postDetails.post]} />
               </div>
@@ -430,7 +452,7 @@ function EstateInfo() {
                     className={`w-full p-4 flex gap-2 items-center justify-center cursor-pointer rounded-md transition ${
                       bookingRequested 
                         ? 'bg-green-500 text-white' 
-                        : 'bg-yellow-300 hover:bg-yellow-400 text-[#444]'
+                        : 'bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 text-[#444] dark:text-gray-900'
                     } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span className="font-semibold text-sm">
@@ -444,25 +466,25 @@ function EstateInfo() {
                 {/* Booking Modal */}
                 {showBookingModal && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
-                      <h2 className="text-2xl font-bold text-[#444] mb-4">
+                    <div className="bg-white dark:bg-stone-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                      <h2 className="text-2xl font-bold text-[#444] dark:text-stone-100 mb-4">
                         {t('booking.selectDuration') || 'Select Rental Duration'}
                       </h2>
                       
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-[#444] mb-2">
+                          <label className="block text-sm font-medium text-[#444] dark:text-stone-300 mb-2">
                             {t('booking.durationType') || 'Duration Type'}
                           </label>
                           {availableDurationTypes.length === 0 ? (
-                            <p className="text-sm text-gray-500 mb-2">
+                            <p className="text-sm text-gray-500 dark:text-stone-400 mb-2">
                               {t('booking.noDurationsAvailable') || 'No duration types available for this apartment.'}
                             </p>
                           ) : (
                             <select
                               value={durationType}
                               onChange={(e) => setDurationType(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:bg-stone-800 dark:text-stone-200"
                             >
                               {availableDurationTypes.map(dt => {
                                 const durationPrice = availableDurations.find(dp => dp.duration_type === dt);
@@ -486,7 +508,7 @@ function EstateInfo() {
                         
                         {/* Show price for selected duration */}
                         {durationType !== 'test_10s' && durationType !== 'test_30s' && (
-                          <div className="p-3 bg-yellow-50 rounded-md">
+                          <div className="p-3 bg-yellow-50 dark:bg-stone-800 dark:border dark:border-stone-600 rounded-md text-[#444] dark:text-stone-200">
                             <p className="text-sm">
                               <span className="font-semibold">{t('booking.price') || 'Price'}: </span>
                               ${availableDurations.find(dp => dp.duration_type === durationType)?.price || 0}
@@ -506,10 +528,10 @@ function EstateInfo() {
                             max="120"
                             value={durationMultiplier}
                             onChange={(e) => setDurationMultiplier(parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:bg-stone-800 dark:text-stone-200"
                             placeholder={t('booking.enterMultiplier') || 'e.g., 1, 2, 3...'}
                           />
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
                             {durationType === 'day' && `${durationMultiplier} day(s)`}
                             {durationType === 'week' && `${durationMultiplier} week(s)`}
                             {durationType === 'month' && `${durationMultiplier} month(s)`}
@@ -526,13 +548,13 @@ function EstateInfo() {
                             setDurationType(availableDurationTypes.length > 0 ? availableDurationTypes[0] : 'month');
                             setDurationMultiplier(1);
                           }}
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-[#444] hover:bg-gray-100 transition"
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md text-[#444] dark:text-stone-200 hover:bg-gray-100 dark:hover:bg-stone-700 transition"
                         >
                           {t('admin.cancel') || 'Cancel'}
                         </button>
                         <button
                           onClick={handleSubmitBooking}
-                          className="flex-1 px-4 py-2 bg-yellow-300 hover:bg-yellow-400 text-[#444] rounded-md font-semibold transition"
+                          className="flex-1 px-4 py-2 bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 text-[#444] dark:text-gray-900 rounded-md font-semibold transition"
                         >
                           {t('booking.submitRequest') || 'Submit Request'}
                         </button>
@@ -541,14 +563,14 @@ function EstateInfo() {
                   </div>
                 )}
                 <div className="flex justify-between items-center gap-3">
-                  <div className="border p-4 flex gap-2 bg-white items-center cursor-pointer border-[#fece51] rounded-md">
+                  <div className="border border-[#fece51] dark:border-yellow-400/60 p-4 flex gap-2 bg-white dark:bg-stone-800 items-center cursor-pointer rounded-md text-[#444] dark:text-stone-200">
                     <img src="/public/chat.png" alt="" className="w-4" />
                     <span className="font-semibold text-sm">Send a Message</span>
                   </div>
                   <div
-                    className={`border p-4 flex gap-2 ${
-                      isSaved ? 'bg-green-500 text-white' : 'bg-white'
-                    }  items-center cursor-pointer border-[#fece51] rounded-md`}
+                    className={`border border-[#fece51] dark:border-yellow-400/60 p-4 flex gap-2 ${
+                      isSaved ? 'bg-green-500 text-white' : 'bg-white dark:bg-stone-800'
+                    } items-center cursor-pointer rounded-md text-[#444] dark:text-stone-200`}
                     onClick={handleSave}
                   >
                     <img src="/public/save.png" alt="" className="w-4" />

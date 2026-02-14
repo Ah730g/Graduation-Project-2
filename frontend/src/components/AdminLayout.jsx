@@ -10,11 +10,11 @@ function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-gray-900">
+    <div className="flex min-h-screen bg-stone-50 dark:bg-stone-900">
       <AdminSidebar />
-      <div className="flex-1 p-5 dark:bg-gray-900">
+      <main className="flex-1 p-5 min-h-screen bg-stone-50 dark:bg-stone-900">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

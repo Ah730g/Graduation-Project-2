@@ -133,13 +133,13 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-md p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-stone-800 rounded-md p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[#444] dark:text-white">{t('admin.userDetails')}</h2>
           <div className="flex gap-2 items-center">
             <button
               onClick={onClose}
-              className="text-2xl text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white transition duration-300 ease"
+              className="text-2xl text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white transition duration-300 ease"
             >
               ×
             </button>
@@ -148,18 +148,18 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
 
         {loading && !user ? (
           <div className="text-center py-8">
-            <p className="text-[#888] dark:text-gray-400">{t('common.loading')}</p>
+            <p className="text-[#888] dark:text-stone-400">{t('common.loading')}</p>
           </div>
         ) : (
           <>
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-stone-700">
               <button
                 onClick={() => setActiveTab('details')}
                 className={`px-4 py-2 font-semibold transition duration-300 ease ${
                   activeTab === 'details'
                     ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 border-b-2 border-yellow-300 dark:border-yellow-400'
-                    : 'text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white'
+                    : 'text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white'
                 }`}
               >
                 {t('admin.details')}
@@ -169,7 +169,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                 className={`px-4 py-2 font-semibold transition duration-300 ease ${
                   activeTab === 'identity'
                     ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 border-b-2 border-yellow-300 dark:border-yellow-400'
-                    : 'text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white'
+                    : 'text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white'
                 }`}
               >
                 {t('admin.identity')}
@@ -179,7 +179,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                 className={`px-4 py-2 font-semibold transition duration-300 ease ${
                   activeTab === 'activities'
                     ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 border-b-2 border-yellow-300 dark:border-yellow-400'
-                    : 'text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white'
+                    : 'text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white'
                 }`}
               >
                 {t('admin.activities')} {stats && `(${stats.total_posts + stats.total_contracts + stats.total_rental_requests + stats.total_saved_posts + stats.total_reviews})`}
@@ -198,7 +198,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                     required
                   />
                 </div>
@@ -212,7 +212,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                     required
                   />
                 </div>
@@ -225,7 +225,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                   >
                     <option value="user">{translateRole('user')}</option>
                     <option value="admin">{translateRole('admin')}</option>
@@ -240,7 +240,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                   >
                     <option value="active">{translateStatus('active')}</option>
                     <option value="disabled">{translateStatus('disabled')}</option>
@@ -257,7 +257,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     value={formData.avatar}
                     onChange={handleChange}
                     placeholder="Avatar URL"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                   />
                 </div>
 
@@ -270,7 +270,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                    className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                   />
                 </div>
 
@@ -284,7 +284,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                       name="password_confirmation"
                       value={formData.password_confirmation}
                       onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
+                      className="w-full p-3 border border-gray-300 dark:border-stone-600 dark:bg-stone-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-300 dark:focus:ring-yellow-500"
                     />
                   </div>
                 )}
@@ -293,7 +293,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                   <button
                     type="button"
                     onClick={onClose}
-                    className="bg-gray-200 dark:bg-gray-700 dark:text-white px-6 py-3 rounded-md font-bold hover:scale-105 transition duration-300 ease"
+                    className="bg-gray-200 dark:bg-stone-700 dark:text-white px-6 py-3 rounded-md font-bold hover:scale-105 transition duration-300 ease"
                   >
                     {t('admin.cancel')}
                   </button>
@@ -313,7 +313,7 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
               <div className="space-y-6">
                 {identity ? (
                   <>
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-md p-4">
+                    <div className="bg-gray-100 dark:bg-stone-700 rounded-md p-4">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-[#444] dark:text-white">{t('admin.identityInformation')}</h3>
                         <button
@@ -327,48 +327,48 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                           }}
                           className="bg-yellow-300 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-500 text-[#444] dark:text-gray-900 font-semibold px-4 py-2 rounded-md transition text-sm"
                         >
-                          {t('admin.viewIdentity') || 'View Identity Page'}
+                          {t('admin.viewInVerifications')}
                         </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.fullName')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.fullName')}</label>
                           <p className="text-[#444] dark:text-white">{identity.full_name || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.documentNumber')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.documentNumber')}</label>
                           <p className="text-[#444] dark:text-white">{identity.document_number || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.documentType')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.documentType')}</label>
                           <p className="text-[#444] dark:text-white">{identity.document_type === 'id_card' ? t('admin.idCard') : t('admin.passport')}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.dateOfBirth')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.dateOfBirth')}</label>
                           <p className="text-[#444]">{formatDate(identity.date_of_birth) || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.placeOfBirth')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.placeOfBirth')}</label>
                           <p className="text-[#444] dark:text-white">{identity.place_of_birth || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.nationality')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.nationality')}</label>
                           <p className="text-[#444] dark:text-white">{identity.nationality || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.issueDate')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.issueDate')}</label>
                           <p className="text-[#444]">{formatDate(identity.issue_date) || '-'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.expiryDate')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.expiryDate')}</label>
                           <p className="text-[#444]">{formatDate(identity.expiry_date) || '-'}</p>
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.address')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.address')}</label>
                           <p className="text-[#444] dark:text-white">{identity.address || '-'}</p>
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.status')}</label>
+                          <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.status')}</label>
                           <span className={`px-2 py-1 rounded-md text-sm ${
                             identity.status === 'approved' ? 'bg-green-200' :
                             identity.status === 'rejected' ? 'bg-red-200' :
@@ -379,13 +379,13 @@ function UserDetailsModal({ userId, isOpen, onClose, onUpdate }) {
                         </div>
                         {identity.admin_notes && (
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-[#888] dark:text-gray-400 mb-1">{t('admin.adminNotes')}</label>
-                            <p className="text-[#444] dark:text-white bg-gray-50 dark:bg-gray-600 p-3 rounded-md">{identity.admin_notes}</p>
+                            <label className="block text-sm font-semibold text-[#888] dark:text-stone-400 mb-1">{t('admin.adminNotes')}</label>
+                            <p className="text-[#444] dark:text-white bg-gray-50 dark:bg-stone-600 p-3 rounded-md">{identity.admin_notes}</p>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-md p-4">
+                    <div className="bg-gray-100 dark:bg-stone-700 rounded-md p-4">
                       <h3 className="text-lg font-bold text-[#444] dark:text-white mb-4">{t('admin.identityDocuments')}</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {identity.document_front_url && (

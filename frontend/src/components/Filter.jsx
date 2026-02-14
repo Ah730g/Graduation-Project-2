@@ -2,10 +2,15 @@ import React from 'react';
 import AxiosClient from '../AxiosClient';
 import { usePostContext } from '../contexts/PostContext';
 import { useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+
+const DURATION_TYPES = ['day', 'week', 'month', 'year'];
 
 function Filter({ properties, loading, onFilterChange }) {
   const { setPosts, setPagination } = usePostContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLanguage();
+  const durationTypeFromUrl = searchParams.get('duration_type') || 'month';
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -13,6 +18,7 @@ function Filter({ properties, loading, onFilterChange }) {
     const data = Object.fromEntries(inputs);
     const payload = {
       type: data.type,
+      duration_type: data.duration_type || 'month',
       min: data.min,
       max: data.max,
       location: data.location,
@@ -26,6 +32,7 @@ function Filter({ properties, loading, onFilterChange }) {
     const newParams = new URLSearchParams();
     if (payload.location) newParams.set('location', payload.location);
     if (payload.type) newParams.set('type', payload.type);
+    if (payload.duration_type) newParams.set('duration_type', payload.duration_type);
     if (payload.min) newParams.set('min', payload.min);
     if (payload.max) newParams.set('max', payload.max);
     if (payload.bedroom) newParams.set('bedroom', payload.bedroom);
@@ -48,85 +55,110 @@ function Filter({ properties, loading, onFilterChange }) {
         loading(false);
       });
   };
+
   return (
-    <form onSubmit={onSubmit}>
-      <h2 className="text-2xl font-light mb-2 dark:text-white">
-        Search result for <b>Sanna'a</b>
+    <form onSubmit={onSubmit} className="bg-white dark:bg-stone-800/80 border border-stone-200 dark:border-stone-600 rounded-xl p-4 md:p-5 shadow-sm">
+      <h2 className="text-xl font-semibold text-stone-800 dark:text-white mb-4">
+        {t('search.filterTitle') || 'Refine search'}
       </h2>
-      <div className="top flex flex-col gap-1">
-        <label htmlFor="city" className="dark:text-gray-200">Location</label>
+      <div className="top flex flex-col gap-2 mb-4">
+        <label htmlFor="city" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+          {t('search.location')}
+        </label>
         <input
           type="text"
           id="city"
-          placeholder="City Location"
-          className="py-2 pl-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white outline-none rounded-md"
+          placeholder={t('search.locationPlaceholder') || 'City or area'}
+          className="py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition"
           name="location"
         />
       </div>
-      <div className="bottom flex justify-between mt-1 gap-5">
-        <div>
-          <label htmlFor="type" className="text-sm dark:text-gray-200">
-            Type
+      <div className="bottom flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="type" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.type') || 'Type'}
           </label>
           <select
             name="type"
             id="type"
-            className="border dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24 py-2 pl-1 outline-none rounded-md"
+            className="min-w-[100px] py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
           >
-            <option value="">Any</option>
-            <option value="rent">Rent</option>
-            <option value="buy">Buy</option>
+            <option value="">{t('search.any') || 'Any'}</option>
+            <option value="rent">{t('search.rent')}</option>
+            <option value="buy">{t('search.buy')}</option>
           </select>
         </div>
-        <div>
-          <label htmlFor="property" className="text-sm dark:text-gray-200">
-            Property
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="property" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.property') || 'Property'}
           </label>
           <select
             id="property"
-            className="border dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24 py-2 pl-1 outline-none rounded-md"
             name="property"
+            className="min-w-[100px] py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
           >
-            {properties && properties.map((e) => {
-              return <option key={e.id} value={e.id}>{e.name}</option>;
-            })}
+            {properties && properties.map((e) => (
+              <option key={e.id} value={e.id}>{e.name}</option>
+            ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="maxPrice" className="text-sm dark:text-gray-200">
-            Max Price
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="duration_type" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.filterByDuration')}
           </label>
-          <input
-            type="number"
-            placeholder="any"
-            className="border dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24 py-2 pl-1 outline-none rounded-md"
-            name="max"
-          />
+          <select
+            id="duration_type"
+            name="duration_type"
+            defaultValue={durationTypeFromUrl}
+            className="min-w-[100px] py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
+          >
+            {DURATION_TYPES.map((d) => (
+              <option key={d} value={d}>{t(`search.duration.${d}`) || d}</option>
+            ))}
+          </select>
         </div>
-        <div>
-          <label htmlFor="minPrice" className="text-sm dark:text-gray-200">
-            Min Price
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="minPrice" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.minPrice')}
           </label>
           <input
             type="number"
-            placeholder="any"
-            className="border dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24 py-2 pl-1 outline-none rounded-md"
+            id="minPrice"
+            placeholder="—"
+            className="w-24 py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
             name="min"
           />
         </div>
-        <div>
-          <label htmlFor="bedroom" className="text-sm dark:text-gray-200">
-            Bedrooms
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="maxPrice" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.maxPrice')}
           </label>
           <input
             type="number"
-            placeholder="any"
-            className="border dark:border-gray-600 dark:bg-gray-800 dark:text-white w-24 py-2 pl-1 outline-none rounded-md"
+            id="maxPrice"
+            placeholder="—"
+            className="w-24 py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
+            name="max"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="bedroom" className="text-sm font-medium text-stone-600 dark:text-stone-300">
+            {t('search.bedrooms') || 'Bedrooms'}
+          </label>
+          <input
+            type="number"
+            id="bedroom"
+            placeholder="—"
+            className="w-24 py-2.5 px-3 border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white outline-none rounded-lg focus:ring-2 focus:ring-amber-400/50 transition"
             name="bedroom"
           />
         </div>
-        <button className="bg-yellow-400 dark:bg-yellow-500 px-7">
-          <img src="/public/search.png" alt="" />
+        <button
+          type="submit"
+          className="flex items-center justify-center gap-2 bg-[#fece51] dark:bg-amber-500 hover:bg-[#e0ab25] dark:hover:bg-amber-600 text-stone-900 dark:text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm min-h-[42px]"
+        >
+          <img src="/public/search.png" alt="" className="w-5 h-5" />
+          <span>{t('search.search') || 'Search'}</span>
         </button>
       </div>
     </form>

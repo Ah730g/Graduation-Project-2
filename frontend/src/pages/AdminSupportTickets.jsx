@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { usePopup } from '../contexts/PopupContext';
 import AxiosClient from '../AxiosClient';
 import { Link } from 'react-router-dom';
+import AdminPagination, { PER_PAGE } from '../components/AdminPagination';
 
 function AdminSupportTickets() {
   const { t, language } = useLanguage();
@@ -10,12 +11,18 @@ function AdminSupportTickets() {
   const [tickets, setTickets] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [filters, setFilters] = useState({
     status: '',
     category: '',
     priority: '',
     search: '',
   });
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   useEffect(() => {
     fetchStats();
@@ -26,7 +33,7 @@ function AdminSupportTickets() {
       fetchStats();
     }, 30000);
     return () => clearInterval(interval);
-  }, [filters]);
+  }, [filters, page]);
 
   const fetchStats = () => {
     AxiosClient.get('/admin/support/stats')
@@ -39,7 +46,7 @@ function AdminSupportTickets() {
   };
 
   const fetchTickets = () => {
-    const params = {};
+    const params = { page, per_page: PER_PAGE };
     if (filters.status) params.status = filters.status;
     if (filters.category) params.category = filters.category;
     if (filters.priority) params.priority = filters.priority;
@@ -47,7 +54,13 @@ function AdminSupportTickets() {
 
     AxiosClient.get('/admin/support/tickets', { params })
       .then((response) => {
-        setTickets(response.data.data || []);
+        const res = response.data;
+        setTickets(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -76,7 +89,7 @@ function AdminSupportTickets() {
       case 'resolved':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'closed':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-200';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -128,18 +141,18 @@ function AdminSupportTickets() {
   };
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
-      <h1 className="text-3xl font-bold text-[#444] dark:text-white mb-8">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-white mb-8">
         {t('admin.supportTickets') || 'Support Tickets'}
       </h1>
 
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md">
-            <div className="text-sm text-gray-600 dark:text-gray-400">{t('support.total') || 'Total'}</div>
+          <div className="bg-white dark:bg-stone-800 rounded-lg p-4 shadow-md">
+            <div className="text-sm text-gray-600 dark:text-stone-400">{t('support.total') || 'Total'}</div>
             <div className="text-2xl font-bold text-[#444] dark:text-white">{stats.total}</div>
           </div>
           <div className="bg-blue-100 dark:bg-blue-900 rounded-lg p-4 shadow-md">
@@ -158,7 +171,7 @@ function AdminSupportTickets() {
       )}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md mb-6">
+      <div className="bg-white dark:bg-stone-800 rounded-lg p-4 shadow-md mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold text-[#444] dark:text-white mb-2">
@@ -167,7 +180,7 @@ function AdminSupportTickets() {
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             >
               <option value="">{t('support.all') || 'All'}</option>
               <option value="open">{t('support.status.open') || 'Open'}</option>
@@ -183,7 +196,7 @@ function AdminSupportTickets() {
             <select
               value={filters.category}
               onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             >
               <option value="">{t('support.all') || 'All'}</option>
               <option value="technical">{t('support.category.technical') || 'Technical'}</option>
@@ -199,7 +212,7 @@ function AdminSupportTickets() {
             <select
               value={filters.priority}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             >
               <option value="">{t('support.all') || 'All'}</option>
               <option value="urgent">{t('support.priority.urgent') || 'Urgent'}</option>
@@ -216,7 +229,7 @@ function AdminSupportTickets() {
               type="text"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
               placeholder={t('admin.searchPlaceholder') || 'Search...'}
             />
           </div>
@@ -225,11 +238,11 @@ function AdminSupportTickets() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-amber-400 dark:border-amber-500 border-t-transparent mx-auto"></div>
         </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-stone-400">
             {t('support.noTickets') || 'No support tickets found'}
           </p>
         </div>
@@ -238,7 +251,7 @@ function AdminSupportTickets() {
           {tickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-6 shadow-md hover:shadow-lg transition"
+              className="bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-md p-6 shadow-md hover:shadow-lg transition"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -250,10 +263,10 @@ function AdminSupportTickets() {
                       {ticket.subject}
                     </Link>
                   </div>
-                  <p className="text-sm text-[#888] dark:text-gray-300 line-clamp-2 mb-2">
+                  <p className="text-sm text-[#888] dark:text-stone-300 line-clamp-2 mb-2">
                     {ticket.description}
                   </p>
-                  <div className="flex gap-4 text-sm text-[#888] dark:text-gray-400">
+                  <div className="flex gap-4 text-sm text-[#888] dark:text-stone-400">
                     <span>{t('support.category.label') || 'Category'}: {getCategoryText(ticket.category)}</span>
                     <span>{t('support.user') || 'User'}: {ticket.user?.name || 'N/A'}</span>
                     {ticket.admin && (
@@ -276,7 +289,7 @@ function AdminSupportTickets() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-[#888] dark:text-gray-400">
+                <span className="text-sm text-[#888] dark:text-stone-400">
                   {new Date(ticket.created_at).toLocaleString()}
                 </span>
                 <div className="flex gap-2">
@@ -300,6 +313,13 @@ function AdminSupportTickets() {
           ))}
         </div>
       )}
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

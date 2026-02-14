@@ -35,7 +35,7 @@ class AdminController extends Controller
      */
     public function getUsers(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $search = $request->get('search', '');
         
         $query = User::query();
@@ -271,13 +271,30 @@ class AdminController extends Controller
     }
 
     /**
+     * Get the page number that contains the given post ID (for deep-linking from user details).
+     */
+    public function getPostPageForId(Request $request, $id)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = $perPage > 0 ? $perPage : 10;
+        $exists = Post::where('id', $id)->exists();
+        if (!$exists) {
+            return response()->json(['page' => 1], 200);
+        }
+        $position = Post::where('id', '>', $id)->count();
+        $page = (int) ceil(($position + 1) / $perPage);
+        return response()->json(['page' => max(1, $page)]);
+    }
+
+    /**
      * Get all posts with status
      */
     public function getPosts(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $posts = Post::with(['user:id,name,email', 'porperty', 'postimage'])
             ->select('id', 'user_id', 'Title', 'Address', 'Price', 'status', 'created_at')
+            ->orderBy('id', 'desc')
             ->paginate($perPage);
 
         return response()->json($posts);
@@ -429,13 +446,30 @@ class AdminController extends Controller
     }
 
     /**
+     * Get the page number that contains the given rental request ID.
+     */
+    public function getRentalRequestPageForId(Request $request, $id)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = $perPage > 0 ? $perPage : 10;
+        $exists = RentalRequest::where('id', $id)->exists();
+        if (!$exists) {
+            return response()->json(['page' => 1], 200);
+        }
+        $position = RentalRequest::where('id', '>', $id)->count();
+        $page = (int) ceil(($position + 1) / $perPage);
+        return response()->json(['page' => max(1, $page)]);
+    }
+
+    /**
      * Get all rental requests
      */
     public function getRentalRequests(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $requests = RentalRequest::with(['user:id,name,email', 'post:id,Title,Address'])
             ->select('id', 'user_id', 'post_id', 'status', 'message', 'requested_at', 'created_at')
+            ->orderBy('id', 'desc')
             ->paginate($perPage);
 
         return response()->json($requests);
@@ -544,14 +578,31 @@ class AdminController extends Controller
     }
 
     /**
+     * Get the page number that contains the given contract ID.
+     */
+    public function getContractPageForId(Request $request, $id)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = $perPage > 0 ? $perPage : 10;
+        $exists = Contract::where('status', '!=', 'draft')->where('id', $id)->exists();
+        if (!$exists) {
+            return response()->json(['page' => 1], 200);
+        }
+        $position = Contract::where('status', '!=', 'draft')->where('id', '>', $id)->count();
+        $page = (int) ceil(($position + 1) / $perPage);
+        return response()->json(['page' => max(1, $page)]);
+    }
+
+    /**
      * Get all contracts
      */
     public function getContracts(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $contracts = Contract::with(['user:id,name,email', 'post:id,Title,Address'])
             ->where('status', '!=', 'draft')
             ->select('id', 'user_id', 'post_id', 'start_date', 'end_date', 'monthly_rent', 'status', 'created_at')
+            ->orderBy('id', 'desc')
             ->paginate($perPage);
 
         return response()->json($contracts);
@@ -672,13 +723,30 @@ class AdminController extends Controller
     }
 
     /**
+     * Get the page number that contains the given review ID.
+     */
+    public function getReviewPageForId(Request $request, $id)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = $perPage > 0 ? $perPage : 10;
+        $exists = Review::where('id', $id)->exists();
+        if (!$exists) {
+            return response()->json(['page' => 1], 200);
+        }
+        $position = Review::where('id', '>', $id)->count();
+        $page = (int) ceil(($position + 1) / $perPage);
+        return response()->json(['page' => max(1, $page)]);
+    }
+
+    /**
      * Get all reviews
      */
     public function getReviews(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $reviews = Review::with(['user:id,name,email', 'post:id,Title'])
             ->select('id', 'user_id', 'post_id', 'rating', 'comment', 'status', 'created_at')
+            ->orderBy('id', 'desc')
             ->paginate($perPage);
 
         return response()->json($reviews);

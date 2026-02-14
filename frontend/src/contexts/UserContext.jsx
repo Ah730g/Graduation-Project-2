@@ -82,9 +82,11 @@ export default function UserContextProvider({ children }) {
     if (token) {
       try {
         const response = await AxiosClient.get("/user");
-        if (response.data) {
+        // Laravel JsonResource wraps response in { data: {...} }
+        const userData = response.data?.data ?? response.data;
+        if (userData) {
           // Check if user account is disabled
-          if (response.data.status === 'disabled') {
+          if (userData.status === 'disabled') {
             setUser(null);
             setToken(null);
             setMessage('Your account has been disabled. Please contact support.', 'error');
@@ -92,9 +94,10 @@ export default function UserContextProvider({ children }) {
             if (window.location.pathname !== '/login') {
               window.location.href = '/login';
             }
-            return;
+            return null;
           }
-          setUser(response.data);
+          setUser(userData);
+          return userData;
         }
       } catch (error) {
         console.error("Error refreshing user:", error);
@@ -108,6 +111,7 @@ export default function UserContextProvider({ children }) {
         }
       }
     }
+    return null;
   };
   const values = {
     user,

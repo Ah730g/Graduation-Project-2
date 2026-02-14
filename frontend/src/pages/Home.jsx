@@ -16,7 +16,7 @@ function Home() {
           {t('home.title')}
         </h1>
         <p 
-          className={`text-sm dark:text-gray-300 ${
+          className={`text-sm dark:text-stone-300 ${
             language === 'ar' ? 'lg:pr-24' : 'lg:pl-24'
           }`}
         >
@@ -30,15 +30,15 @@ function Home() {
         >
           <div>
             <h1 className="text-4xl font-bold dark:text-white mb-1">5000+</h1>
-            <h2 className="text-sm font-light dark:text-gray-300 leading-tight">{t('home.apartmentsCount')}</h2>
+            <h2 className="text-sm font-light dark:text-stone-300 leading-tight">{t('home.apartmentsCount')}</h2>
           </div>
           <div>
             <h1 className="text-4xl font-bold dark:text-white mb-1">10,000+</h1>
-            <h2 className="text-sm font-light dark:text-gray-300 leading-tight">{t('home.clientsCount')}</h2>
+            <h2 className="text-sm font-light dark:text-stone-300 leading-tight">{t('home.clientsCount')}</h2>
           </div>
           <div>
             <h1 className="text-4xl font-bold dark:text-white mb-1">25,000+</h1>
-            <h2 className="text-sm font-light dark:text-gray-300 leading-tight">{t('home.transactionsCount')}</h2>
+            <h2 className="text-sm font-light dark:text-stone-300 leading-tight">{t('home.transactionsCount')}</h2>
           </div>
         </div>
       </div>

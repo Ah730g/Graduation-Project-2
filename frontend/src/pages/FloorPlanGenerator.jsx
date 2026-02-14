@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import AxiosClient from "../AxiosClient";
 import FloorPlanSVG from "./FloorPlanSVG";
 import FloorPlanEditor from "./FloorPlanEditor";
@@ -18,6 +18,27 @@ export default function FloorPlanGenerator({ onFloorPlanCreated = null }) {
   const [showEditor, setShowEditor] = useState(false);
   const [show3D, setShow3D] = useState(false);
   const svgContainerRef = useRef(null);
+
+  // When opening in edit mode (e.g. from AddPost with existing 2D/3D plan), load saved floor plan and open editor
+  useEffect(() => {
+    if (mode !== 'edit') return;
+    const saved = localStorage.getItem('floorPlanToEdit');
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      const layout = parsed.layout ?? parsed.originalResult?.layout;
+      const title = parsed.title ?? parsed.originalResult?.title ?? '';
+      if (layout && typeof layout === 'object') {
+        const resultObj = parsed.originalResult && typeof parsed.originalResult === 'object'
+          ? { ...parsed.originalResult, layout, title }
+          : { layout, title };
+        setResult(resultObj);
+        setShowEditor(true);
+      }
+    } catch (e) {
+      console.error('Failed to load floor plan for edit:', e);
+    }
+  }, [mode]);
 
   // تحويل المخطط إلى 3D - يجب أن يكون خارج الشرط لضمان استدعاء useMemo دائماً
   const layout3D = useMemo(() => {

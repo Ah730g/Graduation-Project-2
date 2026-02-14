@@ -22,15 +22,15 @@ function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
+      <div className="text-center py-8 dark:bg-stone-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 dark:border-yellow-400 mx-auto"></div>
       </div>
     );
   }
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">{t('admin.dashboard')}</h1>
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">{t('admin.dashboard')}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title={t('admin.totalUsers')}

@@ -53,14 +53,17 @@ class UpdatepostRequest extends FormRequest
                 "has_internet" => "nullable|boolean",
                 "has_electricity" => "nullable|boolean",
                 "has_air_conditioning" => "nullable|boolean",
-                "building_condition" => "nullable|string|in:excellent,good,fair,poor"
+                "building_condition" => "nullable|string|in:excellent,good,fair,poor",
+                "duration_prices" => "nullable|array",
+                "duration_prices.*.duration_type" => "nullable|in:day,week,month,year",
+                "duration_prices.*.price" => "nullable|numeric|min:0"
             ];
         }
         
-        // For published posts, require all fields
+        // For published posts, require all fields; duration_prices required (at least one)
         return [
             "title" => "required|string",
-            "price" => "required|numeric",
+            "price" => "nullable|numeric",
             "address" => "required|string",
             "description" => "required",
             "city" => "required",
@@ -85,7 +88,10 @@ class UpdatepostRequest extends FormRequest
             "has_internet" => "nullable|boolean",
             "has_electricity" => "nullable|boolean",
             "has_air_conditioning" => "nullable|boolean",
-            "building_condition" => "nullable|string|in:excellent,good,fair,poor"
+            "building_condition" => "nullable|string|in:excellent,good,fair,poor",
+            "duration_prices" => "required|array|min:1",
+            "duration_prices.*.duration_type" => "required|in:day,week,month,year",
+            "duration_prices.*.price" => "required|numeric|min:0.01"
         ];
     }
 }

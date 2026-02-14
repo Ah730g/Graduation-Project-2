@@ -11,7 +11,7 @@ function Chat() {
         {repeat.map((v, i) => {
           return (
             <div
-              className="flex items-center p-5 bg-white dark:bg-gray-800 rounded-md gap-5 cursor-pointer"
+              className="flex items-center p-5 bg-white dark:bg-stone-800 rounded-md gap-5 cursor-pointer"
               key={i}
             >
               <img
@@ -20,7 +20,7 @@ function Chat() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               <span className="font-bold dark:text-white">Homady Senan</span>
-              <p className="dark:text-gray-300">Lorem ipsum dolor sit, amet...</p>
+              <p className="dark:text-stone-300">Lorem ipsum dolor sit, amet...</p>
             </div>
           );
         })}
@@ -45,7 +45,7 @@ function Chat() {
               X
             </span>
           </div>
-          <div className="center h-[350px] bg-white dark:bg-gray-800 p-4 flex flex-col gap-5 overflow-y-scroll">
+          <div className="center h-[350px] bg-white dark:bg-stone-800 p-4 flex flex-col gap-5 overflow-y-scroll">
             <div>
               <p>Lorem ipsum, dolor sit amet</p>
               <span>1 hour ago</span>

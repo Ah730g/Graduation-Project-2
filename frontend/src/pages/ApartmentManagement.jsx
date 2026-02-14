@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import AdminTable from "../components/AdminTable";
+import AdminPagination, { PER_PAGE } from "../components/AdminPagination";
 import PostDetailsModal from "../components/PostDetailsModal";
 import AxiosClient from "../AxiosClient";
 import { useUserContext } from "../contexts/UserContext";
@@ -12,16 +13,33 @@ function ApartmentManagement() {
   const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const { setMessage } = useUserContext();
   const { showConfirm, showPrompt } = usePopup();
   const highlightedId = searchParams.get('postId');
+  const [resolvedHighlightPage, setResolvedHighlightPage] = useState(!searchParams.get('postId'));
 
   useEffect(() => {
+    if (!highlightedId) {
+      setResolvedHighlightPage(true);
+      return;
+    }
+    AxiosClient.get(`/admin/posts/page-for-id/${highlightedId}`, { params: { per_page: PER_PAGE } })
+      .then((r) => {
+        setPage(r.data.page);
+        setResolvedHighlightPage(true);
+      })
+      .catch(() => setResolvedHighlightPage(true));
+  }, [highlightedId]);
+
+  useEffect(() => {
+    if (!resolvedHighlightPage) return;
     fetchPosts();
-  }, []);
+  }, [page, resolvedHighlightPage]);
 
   useEffect(() => {
     if (highlightedId && posts.length > 0) {
@@ -36,9 +54,15 @@ function ApartmentManagement() {
 
   const fetchPosts = () => {
     setLoading(true);
-    AxiosClient.get("/admin/posts")
+    AxiosClient.get("/admin/posts", { params: { page, per_page: PER_PAGE } })
       .then((response) => {
-        setPosts(response.data.data || []);
+        const res = response.data;
+        setPosts(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -223,8 +247,8 @@ function ApartmentManagement() {
   };
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">
         {t("admin.apartmentManagement")}
       </h1>
       <AdminTable
@@ -233,6 +257,13 @@ function ApartmentManagement() {
         actions={actions}
         loading={loading}
         highlightedRowId={highlightedId}
+      />
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
       />
       {isModalOpen && selectedPost && (
         <PostDetailsModal

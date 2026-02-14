@@ -109,7 +109,7 @@ function TicketDetails() {
       case 'resolved':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'closed':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-200';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -165,7 +165,7 @@ function TicketDetails() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <div className="flex justify-between items-center mb-6">
@@ -186,13 +186,13 @@ function TicketDetails() {
       </div>
 
       {/* Ticket Info */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+      <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md mb-6">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h1 className="text-2xl font-bold text-[#444] dark:text-white mb-2">
               {ticket.subject}
             </h1>
-            <div className="flex gap-4 text-sm text-[#888] dark:text-gray-400">
+            <div className="flex gap-4 text-sm text-[#888] dark:text-stone-400">
               <span>{t('support.category.label') || 'Category'}: {getCategoryText(ticket.category)}</span>
               {ticket.admin && (
                 <span>{t('support.assignedTo') || 'Assigned to'}: {ticket.admin.name}</span>
@@ -203,13 +203,13 @@ function TicketDetails() {
             {getStatusText(ticket.status)}
           </span>
         </div>
-        <p className="text-[#444] dark:text-gray-300 whitespace-pre-wrap">
+        <p className="text-[#444] dark:text-stone-300 whitespace-pre-wrap">
           {ticket.description}
         </p>
       </div>
 
       {/* Messages */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+      <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md mb-6">
         <h2 className="text-xl font-bold text-[#444] dark:text-white mb-4">
           {t('support.messages') || 'Messages'}
         </h2>
@@ -257,7 +257,7 @@ function TicketDetails() {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+            <p className="text-gray-500 dark:text-stone-400 text-center py-4">
               {t('support.noMessages') || 'No messages yet'}
             </p>
           )}
@@ -267,7 +267,7 @@ function TicketDetails() {
 
       {/* Reply Form */}
       {ticket.status !== 'closed' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+        <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
           <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-4">
             {t('support.reply') || 'Reply'}
           </h3>
@@ -276,13 +276,13 @@ function TicketDetails() {
               <textarea
                 value={replyMessage}
                 onChange={(e) => setReplyMessage(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
                 placeholder={t('support.replyPlaceholder') || 'Type your message...'}
                 rows={4}
                 maxLength={5000}
                 required
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
                 {replyMessage.length}/5000 {t('support.characters') || 'characters'}
               </p>
             </div>

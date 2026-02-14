@@ -15,6 +15,29 @@ use Illuminate\Http\Request;
 class postController extends Controller
 {
     /**
+     * Compute minimum monthly equivalent from duration prices for display (e.g. listing when no duration filter).
+     */
+    private static function computeDisplayPriceFromDurations(array $durationPrices): float
+    {
+        $monthlyEquivalents = [];
+        foreach ($durationPrices as $dp) {
+            $type = $dp['duration_type'] ?? $dp->duration_type ?? null;
+            $price = (float) ($dp['price'] ?? $dp->price ?? 0);
+            if (!$type || $price <= 0) {
+                continue;
+            }
+            switch ($type) {
+                case 'day': $monthlyEquivalents[] = $price * 30; break;
+                case 'week': $monthlyEquivalents[] = $price * (52 / 12); break;
+                case 'month': $monthlyEquivalents[] = $price; break;
+                case 'year': $monthlyEquivalents[] = $price / 12; break;
+                default: break;
+            }
+        }
+        return empty($monthlyEquivalents) ? 0 : min($monthlyEquivalents);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -49,11 +72,21 @@ class postController extends Controller
         if($request->has("location") && !empty($request->location))
             $query->where("City",$request->location);
 
-        if($request->has("min") && !empty($request->min))
-            $query->where("Price",">=",$request->min);
-
-        if($request->has("max") && !empty($request->max))
-            $query->where("Price","<=",$request->max);
+        // Price filter: use duration_type + min/max against post_duration_prices
+        $durationType = $request->filled('duration_type') && in_array($request->duration_type, ['day', 'week', 'month', 'year'])
+            ? $request->duration_type
+            : 'month';
+        if ($request->filled('min') || $request->filled('max')) {
+            $query->whereHas('durationPrices', function ($q) use ($request, $durationType) {
+                $q->where('duration_type', $durationType);
+                if ($request->filled('min')) {
+                    $q->where('price', '>=', $request->min);
+                }
+                if ($request->filled('max')) {
+                    $q->where('price', '<=', $request->max);
+                }
+            });
+        }
 
         if($request->has("type") && !empty($request->type))
             $query->where("Type","=",$request->type);
@@ -157,7 +190,7 @@ class postController extends Controller
             'user_id' => $user->id,
             'status' => $isDraft ? 'draft' : 'pending',
             'Title' => $request->title ?? 'Draft',
-            'Price' => $request->price ?? 0,
+            'Price' => 0,
             'Address' => $request->address ?? 'Not specified',
             'Description' => $request->description ?? 'Draft post',
             'City' => $request->city ?? 'Not specified',
@@ -169,7 +202,7 @@ class postController extends Controller
             'porperty_id' => $defaultPropertyId,
             'Utilities_Policy' => $request->utilities_policy ?? 'owner',
             'Pet_Policy' => $request->has('pet_policy') ? (bool)$request->pet_policy : false,
-            'Income_Policy' => $request->income_policy ?? 'Not specified',
+            'Income_Policy' => $request->income_policy ?? '',
             'Total_Size' => $request->total_size ?? 0,
             'Bus' => $request->bus ?? 0,
             'Resturant' => $request->resturant ?? 0,
@@ -212,6 +245,10 @@ class postController extends Controller
                         ]
                     );
                 }
+            }
+            $displayPrice = self::computeDisplayPriceFromDurations($request->duration_prices);
+            if ($displayPrice > 0) {
+                $post->update(['Price' => $displayPrice]);
             }
         }
 
@@ -302,10 +339,10 @@ class postController extends Controller
             $defaultPropertyId = $firstProperty ? $firstProperty->id : 1;
         }
         
-        // Update post data
+        // Update post data (Price not from request; keep existing or optional compute from duration_prices)
         $updateData = [
             'Title' => $request->title ?? $post->Title,
-            'Price' => $request->price ?? $post->Price,
+            'Price' => $post->Price,
             'Address' => $request->address ?? $post->Address,
             'Description' => $request->description ?? $post->Description,
             'City' => $request->city ?? $post->City,
@@ -317,7 +354,7 @@ class postController extends Controller
             'porperty_id' => $defaultPropertyId,
             'Utilities_Policy' => $request->utilities_policy ?? $post->Utilities_Policy,
             'Pet_Policy' => $request->has('pet_policy') ? (bool)$request->pet_policy : $post->Pet_Policy,
-            'Income_Policy' => $request->income_policy ?? $post->Income_Policy,
+            'Income_Policy' => $request->filled('income_policy') ? $request->income_policy : $post->Income_Policy,
             'Total_Size' => $request->total_size ?? $post->Total_Size,
             'Bus' => $request->bus ?? $post->Bus,
             'Resturant' => $request->resturant ?? $post->Resturant,
@@ -368,7 +405,7 @@ class postController extends Controller
             PostDurationPrice::where('post_id', $post->id)
                 ->whereNotIn('duration_type', $newDurationTypes)
                 ->delete();
-            
+
             // Update or create duration prices
             foreach ($request->duration_prices as $durationPrice) {
                 if (isset($durationPrice['duration_type']) && isset($durationPrice['price'])) {
@@ -383,10 +420,14 @@ class postController extends Controller
                     );
                 }
             }
+            $displayPrice = self::computeDisplayPriceFromDurations($request->duration_prices);
+            if ($displayPrice > 0) {
+                $post->update(['Price' => $displayPrice]);
+            }
         }
-        
+
         $post = $post->fresh()->load(['postimage', 'durationPrices']);
-        
+
         return response(new PostResource($post), 200);
     }
 

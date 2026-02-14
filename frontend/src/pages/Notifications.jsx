@@ -154,7 +154,7 @@ function Notifications() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <div className="flex justify-between items-center mb-8">
@@ -187,16 +187,16 @@ function Notifications() {
         </div>
       ) : notifications.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">{t('notifications.noNotifications') || 'No notifications'}</p>
+          <p className="text-gray-600 dark:text-stone-400">{t('notifications.noNotifications') || 'No notifications'}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`block bg-white dark:bg-gray-800 border rounded-md p-4 transition hover:shadow-md ${
+              className={`block bg-white dark:bg-stone-800 border rounded-md p-4 transition hover:shadow-md ${
                 notification.read 
-                  ? 'border-gray-200 dark:border-gray-700' 
+                  ? 'border-gray-200 dark:border-stone-700' 
                   : 'border-yellow-300 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
               }`}
             >
@@ -219,7 +219,7 @@ function Notifications() {
                         return notification.title;
                       })()}
                     </h3>
-                    <p className="text-sm text-[#888] dark:text-gray-300">
+                    <p className="text-sm text-[#888] dark:text-stone-300">
                       {(() => {
                         const translationKey = `notifications.types.${notification.type}.message`;
                         const translated = t(translationKey);
@@ -255,7 +255,7 @@ function Notifications() {
                         return notification.message;
                       })()}
                     </p>
-                    <p className="text-xs text-[#888] dark:text-gray-400 mt-2">
+                    <p className="text-xs text-[#888] dark:text-stone-400 mt-2">
                       {new Date(notification.created_at).toLocaleString()}
                     </p>
                   </div>

@@ -50,7 +50,7 @@ function Pagination({ currentPage, lastPage, onPageChange, loading = false }) {
         disabled={currentPage === 1 || loading}
         className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
           currentPage === 1 || loading
-            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            ? 'bg-gray-200 dark:bg-stone-700 text-gray-400 dark:text-stone-500 cursor-not-allowed'
             : 'bg-yellow-300 dark:bg-yellow-500 text-[#444] dark:text-white hover:bg-yellow-400 dark:hover:bg-yellow-600 hover:scale-105'
         }`}
         aria-label="Previous page"
@@ -71,14 +71,14 @@ function Pagination({ currentPage, lastPage, onPageChange, loading = false }) {
             disabled={loading}
             className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
               loading
-                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                ? 'bg-gray-200 dark:bg-stone-700 text-gray-400 dark:text-stone-500 cursor-not-allowed'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             1
           </button>
           {pageNumbers[0] > 2 && (
-            <span className="px-2 text-gray-500 dark:text-gray-400">...</span>
+            <span className="px-2 text-gray-500 dark:text-stone-400">...</span>
           )}
         </>
       )}
@@ -93,8 +93,8 @@ function Pagination({ currentPage, lastPage, onPageChange, loading = false }) {
             currentPage === pageNum
               ? 'bg-yellow-400 dark:bg-yellow-500 text-[#444] dark:text-white scale-110 shadow-lg'
               : loading
-              ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:scale-105'
+              ? 'bg-gray-200 dark:bg-stone-700 text-gray-400 dark:text-stone-500 cursor-not-allowed'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600 hover:scale-105'
           }`}
         >
           {pageNum}
@@ -105,15 +105,15 @@ function Pagination({ currentPage, lastPage, onPageChange, loading = false }) {
       {pageNumbers[pageNumbers.length - 1] < lastPage && (
         <>
           {pageNumbers[pageNumbers.length - 1] < lastPage - 1 && (
-            <span className="px-2 text-gray-500 dark:text-gray-400">...</span>
+            <span className="px-2 text-gray-500 dark:text-stone-400">...</span>
           )}
           <button
             onClick={() => onPageChange(lastPage)}
             disabled={loading}
             className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
               loading
-                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                ? 'bg-gray-200 dark:bg-stone-700 text-gray-400 dark:text-stone-500 cursor-not-allowed'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             {lastPage}
@@ -127,7 +127,7 @@ function Pagination({ currentPage, lastPage, onPageChange, loading = false }) {
         disabled={currentPage === lastPage || loading}
         className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
           currentPage === lastPage || loading
-            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            ? 'bg-gray-200 dark:bg-stone-700 text-gray-400 dark:text-stone-500 cursor-not-allowed'
             : 'bg-yellow-300 dark:bg-yellow-500 text-[#444] dark:text-white hover:bg-yellow-400 dark:hover:bg-yellow-600 hover:scale-105'
         }`}
         aria-label="Next page"

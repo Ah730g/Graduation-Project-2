@@ -16,23 +16,24 @@ function ListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
 
+  // Sync currentPage from URL when navigating (e.g. from Home search with filters)
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    setCurrentPage(pageFromUrl);
+  }, [searchParams]);
+
   useEffect(() => {
     AxiosClient.get('/property').then((response) => {
       setProperties(response.data);
     });
-    
-    // Load posts on initial mount
-    if (!posts || posts.length === 0) {
-      loadPosts(currentPage);
-    }
   }, []);
 
-  // Load posts when page changes
+  // Load posts when page or filter params change
   useEffect(() => {
     if (currentPage) {
       loadPosts(currentPage);
     }
-  }, [currentPage]);
+  }, [currentPage, searchParams]);
 
   const loadPosts = (page = 1) => {
     setLoading(true);
@@ -44,6 +45,7 @@ function ListPage() {
     // Get filters from URL params if available
     const location = searchParams.get('location');
     const type = searchParams.get('type');
+    const durationType = searchParams.get('duration_type') || 'month';
     const min = searchParams.get('min');
     const max = searchParams.get('max');
     const bedroom = searchParams.get('bedroom');
@@ -51,6 +53,7 @@ function ListPage() {
 
     if (location) filters.location = location;
     if (type) filters.type = type;
+    filters.duration_type = durationType;
     if (min) filters.min = min;
     if (max) filters.max = max;
     if (bedroom) filters.bedroom = bedroom;
@@ -83,7 +86,7 @@ function ListPage() {
   return (
     <div
       className="px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
-     lg:flex lg:justify-between h-[calc(100vh-100px)] dark:bg-gray-900"
+     lg:flex lg:justify-between h-[calc(100vh-100px)] dark:bg-stone-900"
     >
       {loading ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -99,7 +102,13 @@ function ListPage() {
               <>
                 <div className="flex flex-col gap-5 mt-5">
                   {posts.map((es) => {
-                    return <EstateCard key={es.id} estate={es} />;
+                    return (
+                      <EstateCard
+                        key={es.id}
+                        estate={es}
+                        durationType={searchParams.get('duration_type') || 'month'}
+                      />
+                    );
                   })}
                 </div>
                 {pagination && (
@@ -111,20 +120,20 @@ function ListPage() {
                   />
                 )}
                 {pagination && (
-                  <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <div className="text-center text-sm text-gray-600 dark:text-stone-400 mb-4">
                     Showing {pagination.from || 0} to {pagination.to || 0} of {pagination.total || 0} results
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400 text-lg">
-                  {t('apartments.noResults') || 'No posts found. Try adjusting your filters.'}
+              <div className="text-center py-16 px-4 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-600">
+                <p className="text-stone-600 dark:text-stone-300 text-lg max-w-md mx-auto">
+                  {t('apartments.noResults')}
                 </p>
               </div>
             )}
           </div>
-          <div className="map lg:flex-1 md:bg-[#fcf5f3] dark:md:bg-gray-800">
+          <div className="map lg:flex-1 md:bg-[#fcf5f3] dark:md:bg-stone-800">
             <Map data={posts || []} />
           </div>
         </>

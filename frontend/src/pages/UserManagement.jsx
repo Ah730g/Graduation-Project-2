@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminTable from "../components/AdminTable";
+import AdminPagination, { PER_PAGE } from "../components/AdminPagination";
 import UserDetailsModal from "../components/UserDetailsModal";
 import AxiosClient from "../AxiosClient";
 import { useUserContext } from "../contexts/UserContext";
@@ -12,29 +13,40 @@ function UserManagement() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const { setMessage } = useUserContext();
   const { t, translateRole, translateStatus, language } = useLanguage();
   const { showConfirm, showPrompt } = usePopup();
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page]);
 
   useEffect(() => {
-    // Debounce search
+    setPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchUsers();
     }, 500);
-
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
   const fetchUsers = () => {
     setLoading(true);
-    const params = searchTerm ? { search: searchTerm } : {};
+    const params = { page, per_page: PER_PAGE };
+    if (searchTerm) params.search = searchTerm;
     AxiosClient.get("/admin/users", { params })
       .then((response) => {
-        setUsers(response.data.data || []);
+        const res = response.data;
+        setUsers(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -176,7 +188,7 @@ function UserManagement() {
       key: "role",
       label: t("admin.role"),
       render: (value) => (
-        <span className="bg-gray-200 px-2 py-1 rounded-md text-sm">
+        <span className="bg-stone-200 dark:bg-stone-600 text-stone-800 dark:text-stone-200 px-2 py-1 rounded-lg text-sm">
           {translateRole(value)}
         </span>
       ),
@@ -186,8 +198,10 @@ function UserManagement() {
       label: t("admin.status"),
       render: (value) => (
         <span
-          className={`px-2 py-1 rounded-md text-sm ${
-            value === "active" ? "bg-green-200" : "bg-red-200"
+          className={`px-2 py-1 rounded-lg text-sm ${
+            value === "active"
+              ? "bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200"
+              : "bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-200"
           }`}
         >
           {translateStatus(value)}
@@ -215,8 +229,8 @@ function UserManagement() {
   ];
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">
         {t("admin.userManagement")}
       </h1>
       <div className="mb-6">
@@ -225,7 +239,7 @@ function UserManagement() {
           placeholder={t("admin.searchUsers") || "Search by name, email, national ID, or identity name..."}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className={`w-full max-w-md border border-gray-300 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-yellow-300 ${
+          className={`w-full max-w-md border border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-amber-400/50 placeholder-stone-400 ${
             language === 'ar' ? 'text-right' : 'text-left'
           }`}
         />
@@ -235,6 +249,13 @@ function UserManagement() {
         data={users}
         actions={actions}
         loading={loading}
+      />
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
       />
       <UserDetailsModal
         userId={selectedUserId}

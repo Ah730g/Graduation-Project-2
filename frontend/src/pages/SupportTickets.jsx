@@ -47,7 +47,7 @@ function SupportTickets() {
       case 'resolved':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'closed':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800 dark:bg-stone-700 dark:text-stone-200';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -107,7 +107,7 @@ function SupportTickets() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <div className="flex justify-between items-center mb-8">
@@ -129,7 +129,7 @@ function SupportTickets() {
           className={`px-4 py-2 rounded-md font-semibold transition ${
             statusFilter === 'all'
               ? 'bg-green-500 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
           }`}
         >
           {t('support.all') || 'All'}
@@ -139,7 +139,7 @@ function SupportTickets() {
           className={`px-4 py-2 rounded-md font-semibold transition ${
             statusFilter === 'open'
               ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
           }`}
         >
           {t('support.status.open') || 'Open'}
@@ -149,7 +149,7 @@ function SupportTickets() {
           className={`px-4 py-2 rounded-md font-semibold transition ${
             statusFilter === 'in_progress'
               ? 'bg-yellow-500 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
           }`}
         >
           {t('support.status.inProgress') || 'In Progress'}
@@ -159,7 +159,7 @@ function SupportTickets() {
           className={`px-4 py-2 rounded-md font-semibold transition ${
             statusFilter === 'resolved'
               ? 'bg-green-500 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
           }`}
         >
           {t('support.status.resolved') || 'Resolved'}
@@ -169,7 +169,7 @@ function SupportTickets() {
           className={`px-4 py-2 rounded-md font-semibold transition ${
             statusFilter === 'closed'
               ? 'bg-gray-500 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
           }`}
         >
           {t('support.status.closed') || 'Closed'}
@@ -182,7 +182,7 @@ function SupportTickets() {
         </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-gray-600 dark:text-stone-400 mb-4">
             {t('support.noTickets') || 'No support tickets found'}
           </p>
           <Link
@@ -198,14 +198,14 @@ function SupportTickets() {
             <Link
               key={ticket.id}
               to={`/support/tickets/${ticket.id}`}
-              className="block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-6 transition hover:shadow-lg"
+              className="block bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-md p-6 transition hover:shadow-lg"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-[#444] dark:text-white mb-2">
                     {ticket.subject}
                   </h3>
-                  <p className="text-sm text-[#888] dark:text-gray-300 line-clamp-2">
+                  <p className="text-sm text-[#888] dark:text-stone-300 line-clamp-2">
                     {ticket.description}
                   </p>
                 </div>
@@ -218,7 +218,7 @@ function SupportTickets() {
                   </span>
                 </div>
               </div>
-              <div className="flex justify-between items-center text-sm text-[#888] dark:text-gray-400">
+              <div className="flex justify-between items-center text-sm text-[#888] dark:text-stone-400">
                 <div className="flex gap-4">
                   <span>{t('support.category.label') || 'Category'}: {getCategoryText(ticket.category)}</span>
                   {ticket.admin && (

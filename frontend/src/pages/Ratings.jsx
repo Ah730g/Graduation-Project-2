@@ -53,7 +53,7 @@ function Ratings() {
   if (!user) {
     return (
       <div className="px-5 mx-auto max-w-[1366px] py-8 text-center">
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-stone-400">
           {t('rating.loginRequired') || 'Please login to view ratings'}
         </p>
       </div>
@@ -61,7 +61,7 @@ function Ratings() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <h1 className="text-3xl font-bold text-[#444] dark:text-white mb-8">
@@ -74,7 +74,7 @@ function Ratings() {
         </div>
       ) : eligibleContracts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-stone-400">
             {t('rating.noEligibleContracts') || 'No completed stays available for rating'}
           </p>
         </div>
@@ -83,17 +83,17 @@ function Ratings() {
           {eligibleContracts.map((contract) => (
             <div
               key={contract.contract_id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-6"
+              className="bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-md p-6"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-2">
                     {contract.post?.title || contract.post?.Title || 'Apartment'}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <p className="text-sm text-gray-600 dark:text-stone-400 mb-1">
                     {contract.post?.address || contract.post?.Address || 'Address not specified'}
                   </p>
-                  <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  <div className="flex gap-4 text-sm text-gray-600 dark:text-stone-400 mt-2">
                     <span>
                       {t('rating.startDate') || 'Start'}: {new Date(contract.start_date).toLocaleDateString()}
                     </span>
@@ -110,8 +110,8 @@ function Ratings() {
               </div>
 
               {contract.other_party && (
-                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-stone-700 rounded-md">
+                  <p className="text-sm text-gray-600 dark:text-stone-300 mb-2">
                     {t('rating.rateUser') || 'Rate'}: {contract.other_party.name}
                   </p>
                   <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ function Ratings() {
                     </span>
                   </div>
                   {contract.user_review.comment && (
-                    <p className="text-sm text-[#444] dark:text-gray-300">
+                    <p className="text-sm text-[#444] dark:text-stone-300">
                       {contract.user_review.comment}
                     </p>
                   )}

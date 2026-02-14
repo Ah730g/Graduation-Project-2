@@ -15,7 +15,7 @@ class AdminSupportController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 15);
+        $perPage = $request->get('per_page', 10);
         $status = $request->get('status');
         $category = $request->get('category');
         $priority = $request->get('priority');

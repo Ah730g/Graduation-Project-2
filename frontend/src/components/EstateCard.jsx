@@ -6,12 +6,22 @@ import { usePopup } from '../contexts/PopupContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import FloorPlanDisplay from './FloorPlanDisplay';
 
-function EstateCard({ estate, showSaveButton = true }) {
+function EstateCard({ estate, showSaveButton = true, durationType }) {
   const { user } = useUserContext();
   const { showToast } = usePopup();
   const { t } = useLanguage();
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Price for display: when durationType is set, use that duration's price from duration_prices; else fallback to estate.Price
+  const displayPrice = (() => {
+    if (durationType && estate?.duration_prices?.length) {
+      const dp = estate.duration_prices.find((d) => d.duration_type === durationType);
+      if (dp && dp.price != null) return { value: dp.price, perDuration: durationType, hasPrice: true };
+      return { value: null, perDuration: durationType, hasPrice: false };
+    }
+    return { value: estate?.Price ?? 0, perDuration: null, hasPrice: true };
+  })();
 
   useEffect(() => {
     if (user && estate && showSaveButton) {
@@ -111,7 +121,7 @@ function EstateCard({ estate, showSaveButton = true }) {
   return (
     <Link 
       to={postUrl}
-      className="flex gap-5 items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-3 rounded-lg transition-all duration-200 -m-3 block"
+      className="flex gap-5 items-center justify-start cursor-pointer hover:bg-gray-50 dark:hover:bg-stone-800 p-3 rounded-lg transition-all duration-200 -m-3 block"
     >
       <div className="image w-2/5 h-48 md:h-48 max-md:h-32 flex-shrink-0">
         <img
@@ -127,24 +137,28 @@ function EstateCard({ estate, showSaveButton = true }) {
         />
       </div>
       <div className="content flex justify-between flex-col gap-2 flex-1 h-full">
-        <h3 className="font-semibold text-lg text-[#444] dark:text-white transition duration-400 hover:text-black dark:hover:text-gray-300">
+        <h3 className="font-semibold text-lg text-[#444] dark:text-white transition duration-400 hover:text-black dark:hover:text-stone-300">
           {estate?.Title || 'Untitled'}
         </h3>
-        <p className="font-light flex items-center gap-1 text-sm text-[#888] dark:text-gray-400">
+        <p className="font-light flex items-center gap-1 text-sm text-[#888] dark:text-stone-400">
           <img src="/public/pin.png" alt="" className="w-4" />
           {estate?.Address || 'Address not specified'}
         </p>
         <p className="bg-yellow-200 dark:bg-yellow-600 w-fit p-1 text-xl rounded-md dark:text-white">
-          ${estate?.Price || 0}
+          {!displayPrice.hasPrice
+            ? (t('search.priceN/A') || 'N/A')
+            : displayPrice.perDuration
+              ? `$${Number(displayPrice.value)}/${t(`search.duration.${displayPrice.perDuration}`) || displayPrice.perDuration}`
+              : `$${Number(displayPrice.value)}`}
         </p>
         <div className="flex justify-between gap-2">
           <div className="flex gap-4 text-sm">
-            <span className="flex gap-1 bg-gray-200 dark:bg-gray-700 p-1 items-center rounded-md dark:text-gray-200">
+            <span className="flex gap-1 bg-gray-200 dark:bg-stone-700 p-1 items-center rounded-md dark:text-stone-200">
               <img src="/public/bed.png" alt="" className="w-4" />
               {estate?.Bedrooms || 0}
               bedroom
             </span>
-            <span className="flex gap-1 bg-gray-200 dark:bg-gray-700 p-1 items-center rounded-md dark:text-gray-200">
+            <span className="flex gap-1 bg-gray-200 dark:bg-stone-700 p-1 items-center rounded-md dark:text-stone-200">
               <img src="/public/bath.png" alt="" className="w-4" />
               {estate?.Bathrooms || 0}
               bathroom
@@ -159,10 +173,10 @@ function EstateCard({ estate, showSaveButton = true }) {
                   handleSaveToggle(e);
                 }}
                 disabled={saving}
-                className={`border dark:border-gray-600 py-[5px] px-2 rounded-sm cursor-pointer transition ${
+                className={`border dark:border-stone-600 py-[5px] px-2 rounded-sm cursor-pointer transition ${
                   isSaved 
                     ? 'bg-yellow-300 dark:bg-yellow-500 hover:bg-yellow-400 dark:hover:bg-yellow-600' 
-                    : 'hover:bg-gray-400 dark:hover:bg-gray-600'
+                    : 'hover:bg-gray-400 dark:hover:bg-stone-600'
                 } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title={isSaved ? t('apartments.unsave') || 'Unsave' : t('apartments.save') || 'Save'}
               >
@@ -173,7 +187,7 @@ function EstateCard({ estate, showSaveButton = true }) {
                 />
               </button>
               <div 
-                className="border dark:border-gray-600 py-[5px] px-2 rounded-sm cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+                className="border dark:border-stone-600 py-[5px] px-2 rounded-sm cursor-pointer hover:bg-gray-400 dark:hover:bg-stone-600 transition"
                 onClick={(e) => e.preventDefault()}
               >
                 <img src="/public/chat.png" alt="" className="w-4" />

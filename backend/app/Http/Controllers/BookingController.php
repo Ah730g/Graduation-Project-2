@@ -35,6 +35,14 @@ class BookingController extends Controller
         // First, check and expire any contracts that have passed their end date (real-time expiration check)
         $this->expireExpiredContracts($post->id);
 
+        // Require identity verification for renters
+        if ($user->identity_status !== 'approved') {
+            return response()->json([
+                'message' => 'Identity verification required. Please verify your identity before requesting rental.',
+                'identity_status' => $user->identity_status ?? 'none',
+            ], 403);
+        }
+
         // Check if user owns the post
         if ($post->user_id === $user->id) {
             return response()->json(['message' => 'You cannot book your own apartment'], 403);

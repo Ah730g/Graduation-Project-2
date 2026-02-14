@@ -172,29 +172,29 @@ function AdminReports() {
 
   if (loading && !report) {
     return (
-      <div className="px-5 mx-auto max-w-[1366px] py-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-300 mx-auto"></div>
+      <div className="px-5 mx-auto max-w-[1366px] py-8 text-center dark:bg-stone-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-amber-400 dark:border-amber-500 border-t-transparent mx-auto"></div>
       </div>
     );
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
-      <h1 className="text-3xl font-bold text-[#444] dark:text-white mb-8">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-white mb-8">
         {t('admin.reportsLabel') || 'Reports'}
       </h1>
 
       {/* Report Type Selector */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+      <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <button
             onClick={() => setReportType('daily')}
             className={`px-4 py-2 rounded-md font-semibold transition ${
               reportType === 'daily'
                 ? 'bg-green-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             {t('admin.reports.daily') || 'Daily'}
@@ -204,7 +204,7 @@ function AdminReports() {
             className={`px-4 py-2 rounded-md font-semibold transition ${
               reportType === 'weekly'
                 ? 'bg-green-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             {t('admin.reports.weekly') || 'Weekly'}
@@ -214,7 +214,7 @@ function AdminReports() {
             className={`px-4 py-2 rounded-md font-semibold transition ${
               reportType === 'monthly'
                 ? 'bg-green-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             {t('admin.reports.monthly') || 'Monthly'}
@@ -224,7 +224,7 @@ function AdminReports() {
             className={`px-4 py-2 rounded-md font-semibold transition ${
               reportType === 'yearly'
                 ? 'bg-green-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-300 hover:bg-gray-300 dark:hover:bg-stone-600'
             }`}
           >
             {t('admin.reports.yearly') || 'Yearly'}
@@ -242,7 +242,7 @@ function AdminReports() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
               />
             </div>
           )}
@@ -256,7 +256,7 @@ function AdminReports() {
                 type="date"
                 value={weekStart}
                 onChange={(e) => setWeekStart(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
               />
             </div>
           )}
@@ -270,7 +270,7 @@ function AdminReports() {
                 <select
                   value={month}
                   onChange={(e) => setMonth(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                     <option key={m} value={m}>
@@ -289,7 +289,7 @@ function AdminReports() {
                   onChange={(e) => setYear(parseInt(e.target.value))}
                   min="2020"
                   max={new Date().getFullYear()}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
                 />
               </div>
             </>
@@ -306,7 +306,7 @@ function AdminReports() {
                 onChange={(e) => setYear(parseInt(e.target.value))}
                 min="2020"
                 max={new Date().getFullYear()}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
               />
             </div>
           )}
@@ -316,8 +316,8 @@ function AdminReports() {
       {report && (
         <>
           {/* Period Info and Export Buttons */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md mb-6 flex justify-between items-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="bg-white dark:bg-stone-800 rounded-lg p-4 shadow-md mb-6 flex justify-between items-center">
+            <p className="text-sm text-gray-600 dark:text-stone-400">
               {t('admin.reports.period') || 'Period'}: {formatDate(report.period.start)} - {formatDate(report.period.end)}
             </p>
             <div className="flex gap-2">
@@ -379,7 +379,7 @@ function AdminReports() {
 
           {/* Growth Stats (for monthly and yearly) */}
           {report.growth && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+            <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md mb-6">
               <h2 className="text-xl font-bold text-[#444] dark:text-white mb-4">
                 {t('admin.reports.growth') || 'Growth Rate'}
               </h2>
@@ -406,7 +406,7 @@ function AdminReports() {
 
           {/* Charts (for weekly, monthly, yearly) */}
           {report.charts && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+            <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md mb-6">
               <h2 className="text-xl font-bold text-[#444] dark:text-white mb-4">
                 {t('admin.reports.charts') || 'Charts'}
               </h2>
@@ -425,7 +425,7 @@ function AdminReports() {
                           style={{ height: `${(item.value / Math.max(...report.charts.users_growth.map(i => i.value))) * 100}%` }}
                           title={`${item.label}: ${item.value}`}
                         />
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                        <p className="text-xs text-gray-600 dark:text-stone-400 mt-2 text-center">
                           {item.label}
                         </p>
                       </div>
@@ -448,7 +448,7 @@ function AdminReports() {
                           style={{ height: `${(item.value / Math.max(...report.charts.revenue_trend.map(i => i.value || 1))) * 100}%` }}
                           title={`${item.label}: ${formatCurrency(item.value)}`}
                         />
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                        <p className="text-xs text-gray-600 dark:text-stone-400 mt-2 text-center">
                           {item.label}
                         </p>
                       </div>
@@ -464,13 +464,13 @@ function AdminReports() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Top Cities */}
               {report.tables.top_cities && report.tables.top_cities.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
                   <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-4">
                     {t('admin.reports.topCities') || 'Top Cities'}
                   </h3>
                   <div className="space-y-2">
                     {report.tables.top_cities.map((city, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-100 dark:bg-stone-700 rounded">
                         <span className="text-[#444] dark:text-white">{city.city}</span>
                         <span className="font-semibold text-green-600 dark:text-green-400">{city.count}</span>
                       </div>
@@ -481,16 +481,16 @@ function AdminReports() {
 
               {/* Top Users */}
               {report.tables.top_users && report.tables.top_users.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
                   <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-4">
                     {t('admin.reports.topUsers') || 'Top Users'}
                   </h3>
                   <div className="space-y-2">
                     {report.tables.top_users.map((user, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-100 dark:bg-stone-700 rounded">
                         <div>
                           <p className="text-[#444] dark:text-white font-semibold">{user.name}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
+                          <p className="text-xs text-gray-600 dark:text-stone-400">{user.email}</p>
                         </div>
                         <span className="font-semibold text-green-600 dark:text-green-400">{user.apartments_count}</span>
                       </div>
@@ -501,7 +501,7 @@ function AdminReports() {
 
               {/* Booking Success Rate */}
               {report.tables.booking_success_rate !== undefined && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
                   <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-4">
                     {t('admin.reports.bookingSuccessRate') || 'Booking Success Rate'}
                   </h3>
@@ -517,13 +517,13 @@ function AdminReports() {
 
           {/* Ratings Stats (for monthly and yearly) */}
           {report.ratings && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+            <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
               <h2 className="text-xl font-bold text-[#444] dark:text-white mb-4">
                 {t('admin.reports.ratings') || 'Ratings Statistics'}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <p className="text-sm text-gray-600 dark:text-stone-400 mb-1">
                     {t('admin.reports.totalReviews') || 'Total Reviews'}
                   </p>
                   <p className="text-2xl font-bold text-[#444] dark:text-white">
@@ -531,7 +531,7 @@ function AdminReports() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <p className="text-sm text-gray-600 dark:text-stone-400 mb-1">
                     {t('admin.reports.averageRating') || 'Average Rating'}
                   </p>
                   <p className="text-2xl font-bold text-[#444] dark:text-white">
@@ -539,20 +539,20 @@ function AdminReports() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <p className="text-sm text-gray-600 dark:text-stone-400 mb-2">
                     {t('admin.reports.ratingDistribution') || 'Rating Distribution'}
                   </p>
                   <div className="space-y-1">
                     {Object.entries(report.ratings.rating_distribution).reverse().map(([rating, count]) => (
                       <div key={rating} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 w-8">{rating}⭐</span>
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                        <span className="text-sm text-gray-600 dark:text-stone-400 w-8">{rating}⭐</span>
+                        <div className="flex-1 bg-gray-200 dark:bg-stone-700 rounded-full h-4">
                           <div
                             className="bg-yellow-400 h-4 rounded-full"
                             style={{ width: `${(count / report.ratings.total_reviews) * 100}%` }}
                           />
                         </div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400 w-8">{count}</span>
+                        <span className="text-sm text-gray-600 dark:text-stone-400 w-8">{count}</span>
                       </div>
                     ))}
                   </div>

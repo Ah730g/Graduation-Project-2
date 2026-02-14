@@ -58,14 +58,14 @@ function CreateTicket() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <h1 className="text-3xl font-bold text-[#444] dark:text-white mb-8">
         {t('support.createTicket') || 'Create Support Ticket'}
       </h1>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-md">
         <div className="mb-6">
           <label className="block text-sm font-semibold text-[#444] dark:text-white mb-2">
             {t('support.subject') || 'Subject'} <span className="text-red-500">*</span>
@@ -74,7 +74,7 @@ function CreateTicket() {
             type="text"
             value={formData.subject}
             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             placeholder={t('support.subjectPlaceholder') || 'Enter ticket subject'}
             maxLength={255}
             required
@@ -88,7 +88,7 @@ function CreateTicket() {
           <select
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             required
           >
             <option value="technical">{t('support.category.technical') || 'Technical'}</option>
@@ -105,7 +105,7 @@ function CreateTicket() {
           <select
             value={formData.priority}
             onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
           >
             <option value="low">{t('support.priority.low') || 'Low'}</option>
             <option value="medium">{t('support.priority.medium') || 'Medium'}</option>
@@ -121,13 +121,13 @@ function CreateTicket() {
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-stone-700 dark:text-white"
             placeholder={t('support.descriptionPlaceholder') || 'Describe your issue in detail...'}
             rows={6}
             maxLength={5000}
             required
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
             {formData.description.length}/5000 {t('support.characters') || 'characters'}
           </p>
         </div>
@@ -143,7 +143,7 @@ function CreateTicket() {
           <button
             type="button"
             onClick={() => navigate('/support/tickets')}
-            className="bg-gray-500 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white font-semibold px-6 py-2 rounded-md transition"
+            className="bg-gray-500 dark:bg-stone-600 hover:bg-gray-600 dark:hover:bg-stone-700 text-white font-semibold px-6 py-2 rounded-md transition"
           >
             {t('admin.cancel') || 'Cancel'}
           </button>

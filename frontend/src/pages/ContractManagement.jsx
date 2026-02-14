@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AdminTable from '../components/AdminTable';
+import AdminPagination, { PER_PAGE } from '../components/AdminPagination';
 import AxiosClient from '../AxiosClient';
 import { useUserContext } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,13 +13,30 @@ function ContractManagement() {
   const [searchParams] = useSearchParams();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const { setMessage } = useUserContext();
   const { showConfirm } = usePopup();
   const highlightedId = searchParams.get('contractId');
+  const [resolvedHighlightPage, setResolvedHighlightPage] = useState(!searchParams.get('contractId'));
 
   useEffect(() => {
+    if (!highlightedId) {
+      setResolvedHighlightPage(true);
+      return;
+    }
+    AxiosClient.get(`/admin/contracts/page-for-id/${highlightedId}`, { params: { per_page: PER_PAGE } })
+      .then((r) => {
+        setPage(r.data.page);
+        setResolvedHighlightPage(true);
+      })
+      .catch(() => setResolvedHighlightPage(true));
+  }, [highlightedId]);
+
+  useEffect(() => {
+    if (!resolvedHighlightPage) return;
     fetchContracts();
-  }, []);
+  }, [page, resolvedHighlightPage]);
 
   useEffect(() => {
     if (highlightedId && contracts.length > 0) {
@@ -33,9 +51,15 @@ function ContractManagement() {
 
   const fetchContracts = () => {
     setLoading(true);
-    AxiosClient.get('/admin/contracts')
+    AxiosClient.get('/admin/contracts', { params: { page, per_page: PER_PAGE } })
       .then((response) => {
-        setContracts(response.data.data || []);
+        const res = response.data;
+        setContracts(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -90,12 +114,12 @@ function ContractManagement() {
       label: t('admin.status'),
       render: (value) => {
         const statusColors = {
-          active: 'bg-green-200',
-          expired: 'bg-gray-200',
-          cancelled: 'bg-red-200',
+          active: 'bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200',
+          expired: 'bg-stone-200 dark:bg-stone-600 text-stone-700 dark:text-stone-200',
+          cancelled: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-200',
         };
         return (
-          <span className={`px-2 py-1 rounded-md text-sm ${statusColors[value] || 'bg-gray-200'}`}>
+          <span className={`px-2 py-1 rounded-lg text-sm ${statusColors[value] || 'bg-stone-200 dark:bg-stone-600 text-stone-800 dark:text-stone-200'}`}>
             {translateStatus(value)}
           </span>
         );
@@ -153,8 +177,8 @@ function ContractManagement() {
   };
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">{t('admin.contracts')}</h1>
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">{t('admin.contracts')}</h1>
       <AdminTable 
         columns={columns} 
         data={contracts} 
@@ -162,6 +186,13 @@ function ContractManagement() {
         loading={loading}
         onRowClick={handleRowClick}
         highlightedRowId={highlightedId}
+      />
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
       />
     </div>
   );

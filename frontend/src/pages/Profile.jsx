@@ -36,7 +36,7 @@ function Profile() {
   return (
     <div
       className="px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
-     lg:flex lg:justify-between h-[calc(100vh-100px)] dark:bg-gray-900"
+     lg:flex lg:justify-between h-[calc(100vh-100px)] dark:bg-stone-900"
     >
       <>
         {' '}
@@ -54,7 +54,7 @@ function Profile() {
             </div>
 
             <div className="info flex flex-col gap-5">
-              <div className="flex gap-5 items-center font-semibold dark:text-gray-200">
+              <div className="flex gap-5 items-center font-semibold dark:text-stone-200">
                 {t('profile.avatar')} :{' '}
                 <img
                   src={user.avatar || '/avatar.png'}
@@ -63,16 +63,16 @@ function Profile() {
                 />
               </div>
 
-              <div className="dark:text-gray-200">
+              <div className="dark:text-stone-200">
                 {t('profile.username')} : <b className="dark:text-white">{user.name}</b>
               </div>
-              <span className="dark:text-gray-200">
+              <span className="dark:text-stone-200">
                 {t('profile.email')} : <b className="dark:text-white">{user.email}</b>
               </span>
 
               {/* Reputation Display */}
               {(reputation || user.reputation) && (
-                <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
+                <div className="border border-gray-300 dark:border-stone-700 rounded-md p-4 bg-gray-50 dark:bg-stone-800">
                   <h4 className="font-semibold dark:text-white mb-3">
                     {t('rating.reputation') || 'Reputation'}
                   </h4>
@@ -83,23 +83,23 @@ function Profile() {
                         <p className="text-2xl font-bold text-[#444] dark:text-white">
                           {(reputation?.average_rating || user.reputation?.average_rating || 0).toFixed(1)}
                         </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs text-gray-600 dark:text-stone-400">
                           {t('rating.averageRating') || 'Average Rating'}
                         </p>
                       </div>
                     </div>
-                    <div className="h-12 w-px bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="h-12 w-px bg-gray-300 dark:bg-stone-600"></div>
                     <div>
                       <p className="text-2xl font-bold text-[#444] dark:text-white">
                         {reputation?.total_reviews || user.reputation?.total_reviews || 0}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-gray-600 dark:text-stone-400">
                         {t('rating.totalReviews') || 'Total Reviews'}
                       </p>
                     </div>
                   </div>
                   {(reputation?.total_reviews || user.reputation?.total_reviews || 0) === 0 && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                    <p className="text-sm text-gray-500 dark:text-stone-400 mt-3">
                       {t('rating.noReviewsYet') || 'No reviews yet'}
                     </p>
                   )}
@@ -107,7 +107,7 @@ function Profile() {
               )}
 
               {/* Identity Verification Status */}
-              <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
+              <div className="border border-gray-300 dark:border-stone-700 rounded-md p-4 bg-gray-50 dark:bg-stone-800">
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="font-semibold dark:text-white">Identity Verification Status</h4>
                   <span
@@ -130,7 +130,7 @@ function Profile() {
                       : 'Not Verified'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                <p className="text-sm text-gray-600 dark:text-stone-300 mb-3">
                   {user.identity_status === 'approved'
                     ? 'Your identity has been verified. You can create posts.'
                     : user.identity_status === 'pending'
@@ -159,7 +159,7 @@ function Profile() {
               </button>
             </div>
           </div>
-          <div className="right flex-1 md:bg-[#fcf5f3] dark:md:bg-gray-800 px-5 overflow-hidden">
+          <div className="right flex-1 md:bg-[#fcf5f3] dark:md:bg-stone-800 px-5 overflow-hidden">
             <Chat />
           </div>
         </>

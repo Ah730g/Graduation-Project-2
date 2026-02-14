@@ -41,8 +41,31 @@ function AddPost() {
   const [fullScreen2DScale, setFullScreen2DScale] = useState(1);
   const fullScreen2DContainerRef = useRef(null);
   const [floorPlanTitle, setFloorPlanTitle] = useState("");
+  const formRef = useRef(null);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   useEffect(() => {
+    // استعادة مسودة النموذج عند العودة من صفحة المخطط (حتى لا تختفي بيانات الحقول)
+    const editId = searchParams.get('edit');
+    if (!editId) {
+      const draft = localStorage.getItem("addPostFormDraft");
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft);
+          setPostData(parsed.formData);
+          setAvatarURL(parsed.avatarURL || []);
+          setLat(parsed.lat ?? "");
+          setLen(parsed.len ?? "");
+          setDurationPrices(Array.isArray(parsed.durationPrices) ? parsed.durationPrices : []);
+          setDraftRestored(true);
+          localStorage.removeItem("addPostFormDraft");
+        } catch (e) {
+          console.error("Error restoring form draft:", e);
+          localStorage.removeItem("addPostFormDraft");
+        }
+      }
+    }
+
     // التحقق من وجود بيانات مخطط عند العودة من صفحة المخططات
     const savedFloorPlan = localStorage.getItem('savedFloorPlanForAddPost');
     if (savedFloorPlan) {
@@ -59,7 +82,6 @@ function AddPost() {
     }
 
     // Check if editing
-    const editId = searchParams.get('edit');
     if (editId) {
       setIsEditing(true);
       setPostId(editId);
@@ -221,7 +243,6 @@ function AddPost() {
     return {
       user_id: user.id,
       title: nullIfEmpty(inputs["title"]),
-      price: parseIntSafe(inputs["price"]),
       address: nullIfEmpty(inputs.address),
       description: nullIfEmpty(inputs["des"]),
       city: nullIfEmpty(inputs["city"]),
@@ -249,6 +270,48 @@ function AddPost() {
       has_air_conditioning: toBoolean(inputs["has-air-conditioning"], null),
       building_condition: nullIfEmpty(inputs["building-condition"]),
     };
+  };
+
+  // Save current form data to localStorage before navigating to floor plan (so it can be restored on return)
+  const saveFormDraft = () => {
+    const form = formRef.current;
+    if (!form) return;
+    const fd = new FormData(form);
+    const inputs = Object.fromEntries(fd);
+    const toBool = (v) => (v === "true" || v === true);
+    const formData = {
+      Title: inputs["title"] ?? "",
+      Address: inputs["address"] ?? "",
+      Description: inputs["des"] ?? "",
+      City: inputs["city"] ?? "",
+      Bedrooms: inputs["bed-num"] ?? "",
+      Bathrooms: inputs["bath-num"] ?? "",
+      Latitude: lat,
+      Longitude: len,
+      Type: inputs["type"] ?? "",
+      porperty_id: inputs["prop"] ?? "",
+      Utilities_Policy: inputs["utl-policy"] ?? "",
+      Pet_Policy: toBool(inputs["pet-policy"]),
+      Income_Policy: inputs["income-policy"] ?? "",
+      Total_Size: inputs["total-size"] ?? "",
+      Bus: inputs["bus"] ?? "",
+      Resturant: inputs["resturant"] ?? "",
+      School: inputs["school"] ?? "",
+      floor_number: inputs["floor-number"] ?? "",
+      floor_condition: inputs["floor-condition"] ?? "",
+      has_elevator: inputs["has-elevator"] === "true" || inputs["has-elevator"] === true,
+      has_internet: inputs["has-internet"] === "true" || inputs["has-internet"] === true,
+      has_electricity: inputs["has-electricity"] === "true" || inputs["has-electricity"] === true,
+      has_air_conditioning: inputs["has-air-conditioning"] === "true" || inputs["has-air-conditioning"] === true,
+      building_condition: inputs["building-condition"] ?? "",
+    };
+    localStorage.setItem("addPostFormDraft", JSON.stringify({
+      formData,
+      avatarURL,
+      lat,
+      len,
+      durationPrices,
+    }));
   };
 
   // Map backend field names to frontend input names
@@ -288,7 +351,7 @@ function AddPost() {
   const countFilledFields = (payload) => {
     let count = 0;
     const fieldsToCheck = [
-      'title', 'price', 'address', 'description', 'city',
+      'title', 'address', 'description', 'city',
       'bedrooms', 'bathrooms', 'latitude', 'longitude', 'type',
       'porperty_id', 'utilities_policy', 'income_policy', 'total_size',
       'bus', 'resturant', 'school'
@@ -352,6 +415,19 @@ function AddPost() {
     console.log('Submitting payload:', payload);
     
     setErrors(null);
+
+    // For publish (not draft): require at least one rental duration with price > 0
+    if (!isDraft) {
+      const validDurations = durationPrices.filter(dp => dp.duration_type && dp.price > 0);
+      if (!validDurations.length) {
+        setErrors({
+          general: [t('addPost.requireOneDuration') || 'Select at least one rental duration and set its price']
+        });
+        setSubmitting(false);
+        setSubmitKind(null);
+        return;
+      }
+    }
     
     // For drafts, check if at least 4 fields are filled
     if (isDraft) {
@@ -372,6 +448,7 @@ function AddPost() {
     apiCall
       .then((response) => {
         console.log(response);
+        localStorage.removeItem("addPostFormDraft");
         if (isEditing) {
           if (isDraft) {
             showToast(t("apartments.draftSaved") || "Draft updated successfully", "success");
@@ -492,12 +569,12 @@ function AddPost() {
   return (
     <div
       className="px-5 mx-auto max-w-[1366px] max-md:max-w-[640px] max-lg:max-w-[768px] max-xl:max-w-[1280px]
-     lg:flex lg:justify-between h-[calc(100vh-100px)] overflow-hidden gap-5"
+     lg:flex lg:justify-between h-[calc(100vh-100px)] overflow-hidden gap-5 dark:bg-stone-900"
     >
       <div className={`inputs lg:w-3/5 w-full flex flex-col gap-12 mb-3 overflow-y-scroll relative ${
         language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
       }`}>
-        <h2 className="font-bold text-3xl">{t("addPost.title")}</h2>
+        <h2 className="font-bold text-3xl text-[#444] dark:text-stone-100">{t("addPost.title")}</h2>
         {errors && errors.general && (
           <div className="bg-red-500 text-white p-3 rounded-md">
             {errors.general.map((error, i) => {
@@ -511,11 +588,13 @@ function AddPost() {
           </div>
         ) : (
           <form
+            ref={formRef}
+            key={draftRestored ? "draft-restored" : "add-post-form"}
             className="items flex gap-y-5 gap-x-2 justify-between flex-wrap items-center"
             onSubmit={onSubmit}
           >
             <div className="title-item flex flex-col">
-              <label htmlFor="title" className="font-semibold text-sm">
+              <label htmlFor="title" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.titleLabel")}
               </label>
               <input
@@ -523,29 +602,14 @@ function AddPost() {
                 name="title"
                 id="title"
                 defaultValue={postData?.Title || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('title') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] dark:bg-stone-800 dark:text-stone-200 ${getFieldError('title') ? 'border-red-500' : 'border-black dark:border-stone-500'}`}
               />
               {getFieldError('title') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('title')}</span>
               )}
             </div>
-            <div className="price-item flex flex-col">
-              <label htmlFor="price" className="font-semibold text-sm">
-                {t("addPost.price")}
-              </label>
-              <input
-                type="number"
-                name="price"
-                id="price"
-                defaultValue={postData?.Price || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('price') ? 'border-red-500' : 'border-black'}`}
-              />
-              {getFieldError('price') && (
-                <span className="text-red-500 text-xs mt-1">{getFieldError('price')}</span>
-              )}
-            </div>
             <div className="address-item flex flex-col">
-              <label htmlFor="address" className="font-semibold text-sm">
+              <label htmlFor="address" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.address")}
               </label>
               <input
@@ -553,28 +617,28 @@ function AddPost() {
                 name="address"
                 id="address"
                 defaultValue={postData?.Address || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('address') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('address') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('address') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('address')}</span>
               )}
             </div>
             <div className="des-item flex flex-col w-full outline-none">
-              <label htmlFor="des" className="font-semibold text-sm">
+              <label htmlFor="des" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.description")}
               </label>
               <textarea
                 name="des"
                 id="des"
                 defaultValue={postData?.Description || ""}
-                className={`h-[200px] w-full border rounded-md resize-none py-5 px-3 outline-none ${getFieldError('des') ? 'border-red-500' : 'border-black'}`}
+                className={`h-[200px] w-full border rounded-md resize-none py-5 px-3 outline-none ${getFieldError('des') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               ></textarea>
               {getFieldError('des') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('des')}</span>
               )}
             </div>
             <div className="city-item flex flex-col">
-              <label htmlFor="city" className="font-semibold text-sm">
+              <label htmlFor="city" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.city")}
               </label>
               <input
@@ -582,14 +646,14 @@ function AddPost() {
                 name="city"
                 id="city"
                 defaultValue={postData?.City || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('city') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('city') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('city') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('city')}</span>
               )}
             </div>
             <div className="bed-item flex flex-col">
-              <label htmlFor="bed-num" className="font-semibold text-sm">
+              <label htmlFor="bed-num" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.bedroomNumber")}
               </label>
               <input
@@ -597,14 +661,14 @@ function AddPost() {
                 name="bed-num"
                 id="bed-num"
                 defaultValue={postData?.Bedrooms || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bed-num') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bed-num') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('bed-num') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('bed-num')}</span>
               )}
             </div>
             <div className="bath-item flex flex-col">
-              <label htmlFor="bath-num" className="font-semibold text-sm">
+              <label htmlFor="bath-num" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.bathroomNumber")}
               </label>
               <input
@@ -612,14 +676,14 @@ function AddPost() {
                 name="bath-num"
                 id="bath-num"
                 defaultValue={postData?.Bathrooms || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bath-num') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bath-num') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('bath-num') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('bath-num')}</span>
               )}
             </div>
             <div className="lat-item flex flex-col">
-              <label htmlFor="lat" className="font-semibold text-sm">
+              <label htmlFor="lat" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.latitude")}
               </label>
               <input
@@ -630,14 +694,14 @@ function AddPost() {
                 onChange={(e) => {
                   setLat(e.currentTarget.value);
                 }}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('lat') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('lat') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('lat') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('lat')}</span>
               )}
             </div>
             <div className="len-item flex flex-col">
-              <label htmlFor="len" className="font-semibold text-sm">
+              <label htmlFor="len" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.longitude")}
               </label>
               <input
@@ -648,14 +712,14 @@ function AddPost() {
                 onChange={(e) => {
                   setLen(e.currentTarget.value);
                 }}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('len') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('len') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('len') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('len')}</span>
               )}
             </div>
             <div className="type-item flex flex-col">
-              <label htmlFor="type" className="font-semibold text-sm">
+              <label htmlFor="type" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.type")}
               </label>
               <select
@@ -663,7 +727,7 @@ function AddPost() {
                 name="type"
                 id="type"
                 defaultValue={postData?.type || postData?.Type || "rent"}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('type') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('type') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               >
                 <option value="rent">{t("search.rent")}</option>
                 <option value="buy">{t("search.buy")}</option>
@@ -673,7 +737,7 @@ function AddPost() {
               )}
             </div>
             <div className="property-item flex flex-col">
-              <label htmlFor="prop" className="font-semibold text-sm">
+              <label htmlFor="prop" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.property")}
               </label>
               <select
@@ -681,7 +745,7 @@ function AddPost() {
                 name="prop"
                 id="prop"
                 defaultValue={postData?.porperty_id || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('prop') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('prop') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               >
                 {properties && properties.map((e) => {
                   return (
@@ -696,7 +760,7 @@ function AddPost() {
               )}
             </div>
             <div className="utilities-item flex flex-col">
-              <label htmlFor="utl-policy" className="font-semibold text-sm">
+              <label htmlFor="utl-policy" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.utilitiesPolicy")}
               </label>
               <select
@@ -704,7 +768,7 @@ function AddPost() {
                 name="utl-policy"
                 id="utl-policy"
                 defaultValue={postData?.utilities_policy || postData?.Utilities_Policy || "owner"}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('utl-policy') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('utl-policy') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               >
                 <option value="owner">{t("addPost.ownerResponsible")}</option>
                 <option value="tenant">{t("addPost.tenantResponsible")}</option>
@@ -715,7 +779,7 @@ function AddPost() {
               )}
             </div>
             <div className="pet-item flex flex-col">
-              <label htmlFor="pet-policy" className="font-semibold text-sm">
+              <label htmlFor="pet-policy" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.petPolicy")}
               </label>
               <select
@@ -723,7 +787,7 @@ function AddPost() {
                 name="pet-policy"
                 id="pet-policy"
                 defaultValue={postData?.pet_policy !== undefined ? String(postData.pet_policy) : (postData?.Pet_Policy !== undefined ? String(postData.Pet_Policy) : "false")}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('pet-policy') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('pet-policy') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               >
                 <option value="true">{t("addPost.allowed")}</option>
                 <option value="false">{t("addPost.notAllowed")}</option>
@@ -733,22 +797,23 @@ function AddPost() {
               )}
             </div>
             <div className="income-item flex flex-col">
-              <label htmlFor="income-policy" className="font-semibold text-sm">
-                {t("addPost.incomePolicy")}
+              <label htmlFor="income-policy" className="font-semibold text-sm text-[#444] dark:text-stone-300">
+                {t("addPost.contactPhone")}
               </label>
               <input
-                type="number"
+                type="tel"
                 name="income-policy"
                 id="income-policy"
+                placeholder={t("addPost.contactPhonePlaceholder")}
                 defaultValue={postData?.income_policy || postData?.Income_Policy || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('income-policy') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('income-policy') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('income-policy') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('income-policy')}</span>
               )}
             </div>
             <div className="total-size-item flex flex-col">
-              <label htmlFor="total-size" className="font-semibold text-sm">
+              <label htmlFor="total-size" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.totalSize")}
               </label>
               <input
@@ -756,14 +821,14 @@ function AddPost() {
                 name="total-size"
                 id="total-size"
                 defaultValue={postData?.total_size || postData?.Total_Size || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('total-size') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('total-size') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('total-size') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('total-size')}</span>
               )}
             </div>
             <div className="school-item flex flex-col">
-              <label htmlFor="school" className="font-semibold text-sm">
+              <label htmlFor="school" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.school")}
               </label>
               <input
@@ -771,14 +836,14 @@ function AddPost() {
                 name="school"
                 id="school"
                 defaultValue={postData?.school || postData?.School || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('school') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('school') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('school') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('school')}</span>
               )}
             </div>
             <div className="resturant-item flex flex-col">
-              <label htmlFor="resturant" className="font-semibold text-sm">
+              <label htmlFor="resturant" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.restaurant")}
               </label>
               <input
@@ -786,14 +851,14 @@ function AddPost() {
                 name="resturant"
                 id="resturant"
                 defaultValue={postData?.resturant || postData?.Resturant || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('resturant') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('resturant') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('resturant') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('resturant')}</span>
               )}
             </div>
             <div className="bus-item flex flex-col">
-              <label htmlFor="bus" className="font-semibold text-sm">
+              <label htmlFor="bus" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                 {t("addPost.bus")}
               </label>
               <input
@@ -801,7 +866,7 @@ function AddPost() {
                 name="bus"
                 id="bus"
                 defaultValue={postData?.bus || postData?.Bus || ""}
-                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bus') ? 'border-red-500' : 'border-black'}`}
+                className={`border outline-none py-5 px-3 rounded-md w-[230px] ${getFieldError('bus') ? 'border-red-500' : 'border-black dark:border-stone-500'} dark:bg-stone-800 dark:text-stone-200`}
               />
               {getFieldError('bus') && (
                 <span className="text-red-500 text-xs mt-1">{getFieldError('bus')}</span>
@@ -809,12 +874,12 @@ function AddPost() {
             </div>
             
             {/* New Apartment Details Section */}
-            <div className="apartment-details-section w-full border-t pt-4 mt-4">
+            <div className="apartment-details-section w-full border-t border-stone-200 dark:border-stone-700 pt-4 mt-4">
               <h3 className="font-bold text-lg mb-4">{t("addPost.apartmentDetails") || "Apartment & Building Details"}</h3>
               
               <div className="flex flex-wrap gap-y-5 gap-x-2 justify-between items-center">
                 <div className="floor-number-item flex flex-col">
-                  <label htmlFor="floor-number" className="font-semibold text-sm">
+                  <label htmlFor="floor-number" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                     {t("addPost.floorNumber") || "Floor Level in Building"}
                   </label>
                   <input
@@ -822,19 +887,19 @@ function AddPost() {
                     name="floor-number"
                     id="floor-number"
                     defaultValue={postData?.floor_number || postData?.Floor_Number || ""}
-                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                    className="border border-black dark:border-stone-500 outline-none py-5 px-3 rounded-md w-[230px] dark:bg-stone-800 dark:text-stone-200"
                   />
                 </div>
                 
                 <div className="floor-condition-item flex flex-col">
-                  <label htmlFor="floor-condition" className="font-semibold text-sm">
+                  <label htmlFor="floor-condition" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                     {t("addPost.floorCondition") || "Flooring Condition"}
                   </label>
                   <select
                     name="floor-condition"
                     id="floor-condition"
                     defaultValue={postData?.floor_condition || postData?.Floor_Condition || ""}
-                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                    className="border border-black dark:border-stone-500 outline-none py-5 px-3 rounded-md w-[230px] dark:bg-stone-800 dark:text-stone-200"
                   >
                     <option value="">{t("addPost.selectOption") || "Select an option"}</option>
                     <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
@@ -845,14 +910,14 @@ function AddPost() {
                 </div>
                 
                 <div className="building-condition-item flex flex-col">
-                  <label htmlFor="building-condition" className="font-semibold text-sm">
+                  <label htmlFor="building-condition" className="font-semibold text-sm text-[#444] dark:text-stone-300">
                     {t("addPost.buildingCondition") || "Building Overall Condition"}
                   </label>
                   <select
                     name="building-condition"
                     id="building-condition"
                     defaultValue={postData?.building_condition || postData?.Building_Condition || ""}
-                    className="border border-black outline-none py-5 px-3 rounded-md w-[230px]"
+                    className="border border-black dark:border-stone-500 outline-none py-5 px-3 rounded-md w-[230px] dark:bg-stone-800 dark:text-stone-200"
                   >
                     <option value="">{t("addPost.selectOption") || "Select an option"}</option>
                     <option value="excellent">{t("addPost.excellent") || "Excellent"}</option>
@@ -911,12 +976,12 @@ function AddPost() {
             </div>
             
             {/* Floor Plan Section */}
-            <div className="floor-plan-section w-full border-t pt-4 mt-4">
+            <div className="floor-plan-section w-full border-t border-stone-200 dark:border-stone-700 pt-4 mt-4">
               <h3 className="font-bold text-lg mb-4">📐 {t("addPost.floorPlan") || "Apartment Floor Plan"}</h3>
               <p className="text-sm text-gray-600 mb-4">{t("addPost.floorPlanDesc") || "Create a visual floor plan to help renters understand the space layout."}</p>
               
               {floorPlanData ? (
-                <div className="mb-4 p-4 bg-green-50 rounded-md border border-green-200">
+                <div className="mb-4 p-4 bg-green-50 dark:bg-stone-800 rounded-md border border-green-200 dark:border-stone-600">
                   <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                     <div>
                       <p className="font-semibold text-green-800">✅ {t("addPost.floorPlanCreated") || "Floor plan has been created"}</p>
@@ -948,20 +1013,18 @@ function AddPost() {
                       <button
                         type="button"
                         onClick={() => {
-                          // حفظ بيانات المخطط الحالي للعودة
+                          saveFormDraft();
                           localStorage.setItem('floorPlanReturnUrl', '/post/add');
                           localStorage.setItem('floorPlanReturnData', JSON.stringify({
                             postId: postId,
                             isEditing: isEditing,
                             existingFloorPlan: floorPlanData
                           }));
-                          // حفظ المخطط الحالي للتحرير
                           localStorage.setItem('floorPlanToEdit', JSON.stringify({
                             layout: floorPlanData.layout || floorPlanData,
                             title: floorPlanTitle,
                             originalResult: floorPlanData
                           }));
-                          // الانتقال إلى صفحة التحرير
                           navigate('/floor-plan?returnTo=addPost&mode=edit');
                         }}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
@@ -970,7 +1033,7 @@ function AddPost() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-3 max-h-64 overflow-auto border border-green-300 rounded p-2 bg-white">
+                  <div className="mt-3 max-h-64 overflow-auto border border-green-300 dark:border-stone-600 rounded p-2 bg-white dark:bg-stone-800">
                     <FloorPlanSVG 
                       layout={floorPlanData.layout || floorPlanData} 
                       title={floorPlanTitle}
@@ -1002,7 +1065,7 @@ function AddPost() {
                   }}
                 >
                   <div
-                    className="bg-white w-full h-full overflow-hidden flex flex-col"
+                    className="bg-white dark:bg-stone-800 w-full h-full overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                     style={{ width: "100vw", height: "100vh", maxWidth: "100vw", maxHeight: "100vh" }}
                   >
@@ -1020,7 +1083,7 @@ function AddPost() {
                     </div>
                     <div
                       ref={fullScreen2DContainerRef}
-                      className="flex-1 min-h-0 overflow-auto bg-gray-50 flex items-start justify-center p-4"
+                      className="flex-1 min-h-0 overflow-auto bg-gray-50 dark:bg-stone-800 flex items-start justify-center p-4"
                     >
                       <div
                         style={{
@@ -1050,7 +1113,7 @@ function AddPost() {
                   }}
                 >
                   <div
-                    className="bg-white w-full h-full overflow-hidden flex flex-col"
+                    className="bg-white dark:bg-stone-800 w-full h-full overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                     style={{ width: "100vw", height: "100vh", maxWidth: "100vw", maxHeight: "100vh" }}
                   >
@@ -1078,13 +1141,12 @@ function AddPost() {
                   <button
                     type="button"
                     onClick={() => {
-                      // حفظ معلومات العودة في localStorage
+                      saveFormDraft();
                       localStorage.setItem('floorPlanReturnUrl', '/post/add');
                       localStorage.setItem('floorPlanReturnData', JSON.stringify({
                         postId: postId,
                         isEditing: isEditing
                       }));
-                      // الانتقال إلى صفحة إنشاء المخطط
                       navigate('/floor-plan?returnTo=addPost');
                     }}
                     className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition font-medium"
@@ -1094,13 +1156,12 @@ function AddPost() {
                   <button
                     type="button"
                     onClick={() => {
-                      // حفظ معلومات العودة في localStorage
+                      saveFormDraft();
                       localStorage.setItem('floorPlanReturnUrl', '/post/add');
                       localStorage.setItem('floorPlanReturnData', JSON.stringify({
                         postId: postId,
                         isEditing: isEditing
                       }));
-                      // الانتقال إلى صفحة إنشاء المخطط يدوياً
                       navigate('/floor-plan/manual?returnTo=addPost');
                     }}
                     className="px-6 py-3 bg-yellow-300 text-[#444] rounded-md hover:bg-yellow-400 transition font-medium"
@@ -1112,7 +1173,7 @@ function AddPost() {
             </div>
 
             {/* Duration Pricing Section */}
-            <div className="duration-prices-section w-full border-t pt-4 mt-4">
+            <div className="duration-prices-section w-full border-t border-stone-200 dark:border-stone-700 pt-4 mt-4">
               <h3 className="font-bold text-lg mb-4">{t("addPost.durationPricing") || "Rental Duration Pricing"}</h3>
               <p className="text-sm text-gray-600 mb-4">{t("addPost.durationPricingDesc") || "Select which duration types you want to offer and set prices for each:"}</p>
               
@@ -1148,7 +1209,7 @@ function AddPost() {
                               : dp
                           ));
                         }}
-                        className="border border-black outline-none py-2 px-3 rounded-md w-[150px]"
+                        className="border border-black dark:border-stone-500 outline-none py-2 px-3 rounded-md w-[150px] dark:bg-stone-800 dark:text-stone-200"
                         min="0"
                         step="0.01"
                       />
@@ -1186,7 +1247,7 @@ function AddPost() {
               type="button"
               onClick={(e) => onSubmit(e, true)}
               disabled={imagesUploading || submitting}
-              className="bg-yellow-300 h-[86px] text-[#444] font-semibold rounded-md w-[230px] hover:bg-yellow-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-yellow-300 dark:bg-yellow-400 h-[86px] text-[#444] dark:text-gray-900 font-semibold rounded-md w-[230px] hover:bg-yellow-400 dark:hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-2">
                 {(submitting && (submitKind === "draft_create" || submitKind === "draft_update")) ? (
@@ -1246,7 +1307,7 @@ function AddPost() {
       {/* Floor Plan Modal */}
       {showFloorPlanModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-stone-800 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
               <h2 className="text-2xl font-bold text-white">
                 {floorPlanMode === 'generate' && (t("addPost.generateFloorPlan") || "Generate Floor Plan with AI")}

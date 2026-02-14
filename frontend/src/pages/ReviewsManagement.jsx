@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import AdminTable from "../components/AdminTable";
+import AdminPagination, { PER_PAGE } from "../components/AdminPagination";
 import AxiosClient from "../AxiosClient";
 import { useUserContext } from "../contexts/UserContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -11,13 +12,30 @@ function ReviewsManagement() {
   const [searchParams] = useSearchParams();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
   const { setMessage } = useUserContext();
   const { showConfirm } = usePopup();
   const highlightedId = searchParams.get('reviewId');
+  const [resolvedHighlightPage, setResolvedHighlightPage] = useState(!searchParams.get('reviewId'));
 
   useEffect(() => {
+    if (!highlightedId) {
+      setResolvedHighlightPage(true);
+      return;
+    }
+    AxiosClient.get(`/admin/reviews/page-for-id/${highlightedId}`, { params: { per_page: PER_PAGE } })
+      .then((r) => {
+        setPage(r.data.page);
+        setResolvedHighlightPage(true);
+      })
+      .catch(() => setResolvedHighlightPage(true));
+  }, [highlightedId]);
+
+  useEffect(() => {
+    if (!resolvedHighlightPage) return;
     fetchReviews();
-  }, []);
+  }, [page, resolvedHighlightPage]);
 
   useEffect(() => {
     if (highlightedId && reviews.length > 0) {
@@ -32,9 +50,15 @@ function ReviewsManagement() {
 
   const fetchReviews = () => {
     setLoading(true);
-    AxiosClient.get("/admin/reviews")
+    AxiosClient.get("/admin/reviews", { params: { page, per_page: PER_PAGE } })
       .then((response) => {
-        setReviews(response.data.data || []);
+        const res = response.data;
+        setReviews(res.data || []);
+        setPagination({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -86,7 +110,7 @@ function ReviewsManagement() {
       key: "rating",
       label: t("admin.rating"),
       render: (value) => (
-        <span className="bg-yellow-200 px-2 py-1 rounded-md text-sm">
+        <span className="bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 px-2 py-1 rounded-lg text-sm">
           {"⭐".repeat(value)} ({value}/5)
         </span>
       ),
@@ -106,8 +130,10 @@ function ReviewsManagement() {
       label: t("admin.status"),
       render: (value) => (
         <span
-          className={`px-2 py-1 rounded-md text-sm ${
-            value === "active" ? "bg-green-200" : "bg-red-200"
+          className={`px-2 py-1 rounded-lg text-sm ${
+            value === "active"
+              ? "bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-200"
+              : "bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-200"
           }`}
         >
           {translateStatus(value)}
@@ -125,8 +151,8 @@ function ReviewsManagement() {
   ];
 
   return (
-    <div className="px-5 mx-auto max-w-[1366px]">
-      <h1 className="text-3xl font-bold text-[#444] mb-8">
+    <div className="px-5 mx-auto max-w-[1366px] dark:bg-stone-900">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 mb-8">
         {t("admin.reviews")}
       </h1>
       <AdminTable
@@ -135,6 +161,13 @@ function ReviewsManagement() {
         actions={actions}
         loading={loading}
         highlightedRowId={highlightedId}
+      />
+      <AdminPagination
+        currentPage={pagination.current_page}
+        lastPage={pagination.last_page}
+        total={pagination.total}
+        perPage={PER_PAGE}
+        onPageChange={setPage}
       />
     </div>
   );

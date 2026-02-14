@@ -91,13 +91,14 @@ class IdentityVerificationController extends Controller
      */
     public function getPending(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
         $verifications = IdentityVerification::with(['user:id,name,email'])
             ->where('status', 'pending')
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
         // Ensure all fields are included in the response
-        $verifications->transform(function ($verification) {
+        $verifications->getCollection()->transform(function ($verification) {
             return $verification->makeVisible([
                 'full_name',
                 'document_number',
@@ -118,9 +119,10 @@ class IdentityVerificationController extends Controller
      */
     public function getAll(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
         $verifications = IdentityVerification::with(['user:id,name,email', 'reviewer:id,name'])
             ->latest()
-            ->paginate(20);
+            ->paginate($perPage);
 
         // Ensure all fields are included in the response
         $verifications->getCollection()->transform(function ($verification) {

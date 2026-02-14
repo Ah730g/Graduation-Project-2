@@ -38,9 +38,9 @@ function AdminSidebar() {
   ];
 
   return (
-    <div className="w-64 bg-[#fcf5f3] dark:bg-gray-800 min-h-screen p-5 max-md:w-full max-md:min-h-0 flex flex-col">
+    <div className="w-64 bg-white dark:bg-stone-800 border-r border-stone-200 dark:border-stone-700 min-h-screen p-5 max-md:w-full max-md:min-h-0 flex flex-col shadow-sm">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#444] dark:text-white">Admin Panel</h2>
+        <h2 className="text-2xl font-bold text-stone-800 dark:text-white">{t('admin.panelTitle') || 'Admin Panel'}</h2>
       </div>
 
       {/* Back to Home Button */}
@@ -76,7 +76,7 @@ function AdminSidebar() {
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition duration-300 ease ${
                 isActive
                   ? "bg-yellow-300 dark:bg-yellow-400 font-bold text-[#444] dark:text-gray-900"
-                  : "hover:bg-gray-200 dark:hover:bg-gray-700 text-[#888] dark:text-gray-300 hover:text-[#444] dark:hover:text-white"
+                  : "hover:bg-gray-200 dark:hover:bg-stone-700 text-[#888] dark:text-stone-300 hover:text-[#444] dark:hover:text-white"
               }`}
             >
               <span className="text-xl">{item.icon}</span>

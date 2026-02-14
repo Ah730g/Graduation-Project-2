@@ -161,7 +161,7 @@ function BookingRequests() {
   }
 
   return (
-    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-gray-900 ${
+    <div className={`px-5 mx-auto max-w-[1366px] py-8 dark:bg-stone-900 ${
       language === 'ar' ? 'lg:pl-10' : 'lg:pr-10'
     }`}>
       <h1 className="text-3xl font-bold text-[#444] dark:text-white mb-8">
@@ -169,13 +169,13 @@ function BookingRequests() {
       </h1>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-stone-700">
         <button
           onClick={() => setActiveTab('received')}
           className={`px-4 py-2 font-semibold transition duration-300 ease ${
             activeTab === 'received'
               ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 border-b-2 border-yellow-300 dark:border-yellow-400'
-              : 'text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white'
+              : 'text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white'
           }`}
         >
           {t('booking.receivedRequests') || 'Received Requests'}
@@ -185,7 +185,7 @@ function BookingRequests() {
           className={`px-4 py-2 font-semibold transition duration-300 ease ${
             activeTab === 'my-requests'
               ? 'bg-yellow-300 dark:bg-yellow-400 text-[#444] dark:text-gray-900 border-b-2 border-yellow-300 dark:border-yellow-400'
-              : 'text-[#888] dark:text-gray-400 hover:text-[#444] dark:hover:text-white'
+              : 'text-[#888] dark:text-stone-400 hover:text-[#444] dark:hover:text-white'
           }`}
         >
           {t('booking.myRequests') || 'My Requests'}
@@ -201,17 +201,17 @@ function BookingRequests() {
           {activeTab === 'received' ? (
             receivedRequests.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-600 dark:text-gray-400">{t('booking.noReceivedRequests') || 'No received requests'}</p>
+                <p className="text-gray-600 dark:text-stone-400">{t('booking.noReceivedRequests') || 'No received requests'}</p>
               </div>
             ) : (
               receivedRequests.map((request) => (
-                <div key={request.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-6">
+                <div key={request.id} className="bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-md p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-[#444] dark:text-white mb-2">
                         {t('booking.requestFrom') || 'Request from'}: {request.user?.name}
                       </h3>
-                      <p className="text-sm text-[#888] dark:text-gray-400">
+                      <p className="text-sm text-[#888] dark:text-stone-400">
                         {new Date(request.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -221,8 +221,8 @@ function BookingRequests() {
                   <EstateCard estate={request.post} showSaveButton={false} />
                   
                   {request.message && (
-                    <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
-                      <p className="text-sm text-[#444] dark:text-gray-200">{request.message}</p>
+                    <div className="mt-4 p-3 bg-gray-100 dark:bg-stone-700 rounded-md">
+                      <p className="text-sm text-[#444] dark:text-stone-200">{request.message}</p>
                     </div>
                   )}
 

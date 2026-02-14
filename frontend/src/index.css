@@ -158,21 +158,26 @@ html[dir="rtl"] .lg\:pr-14 {
   animation: scale-in 0.2s ease-out;
 }
 
-/* Dark mode scrollbar */
+/* Dark mode - warm theme to match site yellow/amber */
+.dark body {
+  background-color: #1c1917;
+}
+
+/* Dark mode scrollbar - warm stone palette */
 .dark ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #292524;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #57534e;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: #78716c;
 }
